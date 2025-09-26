@@ -1,1 +1,6 @@
-.txt
+*.txt
+!haiku.txt
+!saima_harmaja.txt
+!book_of_lies.txt
+!phrases.txt
+!large_phrases.txt
