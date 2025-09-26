@@ -1,0 +1,112 @@
+Poem with 8 phrases and 179 words.
+Timestamp: T34HBS
+Last Phrase: No_phrases_generated
+
+Generated Phrases:
+Overall Poem Word Powers:
+Taivos: Gematria=770, Frequency=2, Magnitude=1.1249086924762601
+is: Gematria=109, Frequency=13, Magnitude=1.0350620891161433
+the: Gematria=213, Frequency=17, Magnitude=2.6449963476990503
+daugter: Gematria=607, Frequency=1, Magnitude=0.44338933528122715
+of: Gematria=66, Frequency=11, Magnitude=0.5303140978816655
+sky: Gematria=820, Frequency=1, Magnitude=0.5989773557341125
+and: Gematria=55, Frequency=14, Magnitude=0.5624543462381301
+earth.: Gematria=304, Frequency=2, Magnitude=0.4441197954711468
+She: Gematria=113, Frequency=8, Magnitude=0.660336011687363
+goddess: Gematria=280, Frequency=1, Magnitude=0.20452885317750183
+dawn,: Gematria=555, Frequency=1, Magnitude=0.40540540540540543
+light,: Gematria=254, Frequency=1, Magnitude=0.18553688823959094
+new: Gematria=555, Frequency=2, Magnitude=0.8108108108108109
+beginnings.: Gematria=289, Frequency=1, Magnitude=0.21110299488677867
+brings: Gematria=258, Frequency=1, Magnitude=0.18845872899926955
+hope: Gematria=143, Frequency=2, Magnitude=0.2089116143170197
+joy: Gematria=770, Frequency=1, Magnitude=0.5624543462381301
+to: Gematria=260, Frequency=2, Magnitude=0.3798392987582177
+world,: Gematria=684, Frequency=2, Magnitude=0.9992695398100804
+her: Gematria=103, Frequency=4, Magnitude=0.30094959824689554
+presence: Gematria=328, Frequency=2, Magnitude=0.47918188458729
+a: Gematria=1, Frequency=10, Magnitude=0.007304601899196494
+reminder: Gematria=293, Frequency=3, Magnitude=0.6420745069393718
+that: Gematria=409, Frequency=3, Magnitude=0.8962746530314097
+even: Gematria=460, Frequency=1, Magnitude=0.3360116873630387
+in: Gematria=59, Frequency=2, Magnitude=0.08619430241051863
+darkest: Gematria=420, Frequency=1, Magnitude=0.30679327976625276
+times,: Gematria=354, Frequency=1, Magnitude=0.25858290723155586
+there: Gematria=308, Frequency=1, Magnitude=0.22498173849525202
+always: Gematria=1332, Frequency=3, Magnitude=2.918918918918919
+promise: Gematria=374, Frequency=1, Magnitude=0.2731921110299489
+day.: Gematria=705, Frequency=1, Magnitude=0.5149744338933528
+often: Gematria=321, Frequency=1, Magnitude=0.23447772096420746
+depicted: Gematria=300, Frequency=1, Magnitude=0.2191380569758948
+as: Gematria=101, Frequency=2, Magnitude=0.14755295836376917
+beautiful: Gematria=853, Frequency=1, Magnitude=0.623082542001461
+maiden,: Gematria=109, Frequency=1, Magnitude=0.07962016070124178
+with: Gematria=717, Frequency=2, Magnitude=1.047479912344777
+golden: Gematria=156, Frequency=1, Magnitude=0.1139517896274653
+hair: Gematria=108, Frequency=1, Magnitude=0.07888970051132213
+radiant: Gematria=355, Frequency=1, Magnitude=0.25931336742147554
+skin.: Gematria=179, Frequency=1, Magnitude=0.13075237399561723
+symbol: Gematria=932, Frequency=2, Magnitude=1.3615777940102265
+purity: Gematria=1369, Frequency=1, Magnitude=1.0
+innocence,: Gematria=235, Frequency=1, Magnitude=0.17165814463111762
+light: Gematria=254, Frequency=2, Magnitude=0.3710737764791819
+shines: Gematria=272, Frequency=1, Magnitude=0.19868517165814464
+brightly: Gematria=1046, Frequency=1, Magnitude=0.7640613586559533
+darkness.: Gematria=370, Frequency=1, Magnitude=0.2702702702702703
+also: Gematria=191, Frequency=1, Magnitude=0.13951789627465302
+fierce: Gematria=118, Frequency=1, Magnitude=0.08619430241051863
+protector: Gematria=778, Frequency=1, Magnitude=0.5682980277574872
+earth: Gematria=304, Frequency=1, Magnitude=0.2220598977355734
+its: Gematria=309, Frequency=1, Magnitude=0.22571219868517164
+inhabitants.: Gematria=630, Frequency=1, Magnitude=0.4601899196493791
+known: Gematria=680, Frequency=1, Magnitude=0.4967129291453616
+be: Gematria=7, Frequency=1, Magnitude=0.005113221329437546
+warrior: Gematria=840, Frequency=1, Magnitude=0.6135865595325055
+goddess,: Gematria=280, Frequency=1, Magnitude=0.20452885317750183
+who: Gematria=568, Frequency=1, Magnitude=0.41490138787436087
+fights: Gematria=330, Frequency=1, Magnitude=0.2410518626734843
+against: Gematria=368, Frequency=1, Magnitude=0.268809349890431
+forces: Gematria=264, Frequency=1, Magnitude=0.19284149013878743
+darkness: Gematria=370, Frequency=1, Magnitude=0.2702702702702703
+chaos.: Gematria=172, Frequency=1, Magnitude=0.1256391526661797
+guardian: Gematria=462, Frequency=1, Magnitude=0.337472607742878
+natural: Gematria=672, Frequency=1, Magnitude=0.49086924762600437
+we: Gematria=505, Frequency=1, Magnitude=0.36888239590942296
+must: Gematria=640, Frequency=1, Magnitude=0.4674945215485756
+respect: Gematria=473, Frequency=1, Magnitude=0.34550766983199416
+care: Gematria=99, Frequency=1, Magnitude=0.0723155588020453
+for: Gematria=156, Frequency=1, Magnitude=0.1139517896274653
+In: Gematria=59, Frequency=1, Magnitude=0.04309715120525932
+many: Gematria=791, Frequency=1, Magnitude=0.5777940102264426
+cultures,: Gematria=1028, Frequency=1, Magnitude=0.7509130752373996
+associated: Gematria=483, Frequency=1, Magnitude=0.3528122717311907
+dawn: Gematria=555, Frequency=2, Magnitude=0.8108108108108109
+rising: Gematria=265, Frequency=1, Magnitude=0.19357195032870708
+sun.: Gematria=450, Frequency=1, Magnitude=0.3287070854638422
+seen: Gematria=160, Frequency=1, Magnitude=0.1168736303871439
+renewal,: Gematria=681, Frequency=1, Magnitude=0.4974433893352812
+no: Gematria=110, Frequency=1, Magnitude=0.08035062089116143
+matter: Gematria=536, Frequency=1, Magnitude=0.3915266617969321
+how: Gematria=568, Frequency=1, Magnitude=0.41490138787436087
+dark: Gematria=115, Frequency=1, Magnitude=0.08400292184075968
+night: Gematria=274, Frequency=1, Magnitude=0.20014609203798392
+may: Gematria=741, Frequency=1, Magnitude=0.5412710007304602
+seem,: Gematria=150, Frequency=1, Magnitude=0.1095690284879474
+will: Gematria=569, Frequency=1, Magnitude=0.4156318480642805
+come.: Gematria=108, Frequency=1, Magnitude=0.07888970051132213
+
+Whole Poem:
+==================================================
+  brightly in the darkness.
+    joy to the world, and her presence is a reminder that even in the darkest of times, there is always the promise of a new day.
+      She is also a fierce protector of the earth and its inhabitants. She is known to be a warrior goddess, who fights against the forces of darkness
+Taivos is the daugter of the sky and the earth. She is the goddess of the dawn, of light, and of new beginnings. She brings hope and
+  She is often depicted as a beautiful maiden, with golden hair and radiant skin. She is a symbol of purity and innocence, and her light shines
+    and chaos. She is a guardian of the natural world, and her presence is a reminder that we must always respect and care for the earth.
+      In many cultures, Taivos is associated with the dawn and the rising sun. She is seen as a symbol of hope and renewal, and her light
+is a reminder that no matter how dark the night may seem, the dawn will always come.
+==================================================
+This poem was generated using advanced algorithms and natural language processing techniques.
+It aims to capture the essence of human emotions and experiences through the art of poetry.
+
+Generated by Goddess Taivos and General Suora

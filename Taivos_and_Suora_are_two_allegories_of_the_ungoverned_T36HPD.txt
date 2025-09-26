@@ -1,0 +1,128 @@
+Poem with 24 phrases and 199 words.
+Timestamp: T36HPD
+Last Phrase: Taivos and Suora are two allegories of the ungoverned
+
+Generated Phrases:
+Taivos and Suora are two incarnations of the unrestrained
+Taivos and Suora are two halves of a whole
+Taivos and Suora are two icons of the unbounded
+Taivos and Suora are two aspects of the divine
+Suora is the way to order
+Suora is the road to truth
+Taivos is Chaos in making
+Taivos and Suora are two principles that govern our existence
+Taivos and Suora are two reflections of the eternal
+Taivos and Suora are two emblems of the limitless
+Taivos and Suora are two avatars of the unconfined
+Taivos and Suora are two personifications of the uncurbed
+Taivos and Suora are two symbols of the infinite
+Taivos and Suora are two manifestations of the sacred
+Taivos and Suora are two allegories of the ungoverned
+Suora is the path to light
+Taivos is wantonness to sin
+Taivos and Suora are two expressions of the spiritual
+Taivos is sin to redemption
+Taivos and Suora are two forces that shape our world
+Taivos and Suora are two sides of the same coin
+Taivos and Suora are two energies that drive our lives
+Taivos and Suora are two representations of the boundless
+Taivos and Suora are two embodiments of the unbridled
+
+Overall Poem Word Powers:
+Taivos: Gematria=770, Frequency=21, Magnitude=13.463780183180683
+is: Gematria=109, Frequency=6, Magnitude=0.5445462114904246
+Chaos: Gematria=172, Frequency=1, Magnitude=0.14321398834304747
+in: Gematria=59, Frequency=1, Magnitude=0.049125728559533725
+making: Gematria=127, Frequency=1, Magnitude=0.10574521232306411
+wantonness: Gematria=1116, Frequency=1, Magnitude=0.929225645295587
+to: Gematria=260, Frequency=5, Magnitude=1.0824313072439633
+sin: Gematria=159, Frequency=2, Magnitude=0.26477935054121565
+redemption: Gematria=533, Frequency=1, Magnitude=0.443796835970025
+Suora: Gematria=551, Frequency=21, Magnitude=9.634471273938384
+the: Gematria=213, Frequency=17, Magnitude=3.0149875104079933
+way: Gematria=1201, Frequency=1, Magnitude=1.0
+order: Gematria=249, Frequency=1, Magnitude=0.2073272273105745
+path: Gematria=279, Frequency=1, Magnitude=0.23230641132389676
+light: Gematria=254, Frequency=1, Magnitude=0.21149042464612822
+road: Gematria=155, Frequency=1, Magnitude=0.12905911740216486
+truth: Gematria=798, Frequency=1, Magnitude=0.6644462947543713
+and: Gematria=55, Frequency=18, Magnitude=0.8243130724396336
+are: Gematria=96, Frequency=18, Magnitude=1.4388009991673605
+two: Gematria=760, Frequency=18, Magnitude=11.390507910074938
+sides: Gematria=218, Frequency=1, Magnitude=0.18151540383014156
+of: Gematria=66, Frequency=15, Magnitude=0.8243130724396336
+same: Gematria=146, Frequency=1, Magnitude=0.12156536219816819
+coin: Gematria=122, Frequency=1, Magnitude=0.1015820149875104
+halves: Gematria=544, Frequency=1, Magnitude=0.4529558701082431
+a: Gematria=1, Frequency=1, Magnitude=0.0008326394671107411
+whole: Gematria=603, Frequency=1, Magnitude=0.5020815986677769
+forces: Gematria=264, Frequency=1, Magnitude=0.21981681931723562
+that: Gematria=409, Frequency=3, Magnitude=1.0216486261448792
+shape: Gematria=184, Frequency=1, Magnitude=0.15320566194837634
+our: Gematria=450, Frequency=3, Magnitude=1.1240632805995003
+world: Gematria=684, Frequency=1, Magnitude=0.5695253955037469
+energies: Gematria=271, Frequency=1, Magnitude=0.22564529558701082
+drive: Gematria=508, Frequency=1, Magnitude=0.42298084929225643
+lives: Gematria=544, Frequency=1, Magnitude=0.4529558701082431
+principles: Gematria=436, Frequency=1, Magnitude=0.3630308076602831
+govern: Gematria=612, Frequency=1, Magnitude=0.5095753538717736
+existence: Gematria=977, Frequency=1, Magnitude=0.813488759367194
+aspects: Gematria=479, Frequency=1, Magnitude=0.398834304746045
+divine: Gematria=477, Frequency=1, Magnitude=0.3971690258118235
+manifestations: Gematria=831, Frequency=1, Magnitude=0.6919233971690258
+sacred: Gematria=203, Frequency=1, Magnitude=0.16902581182348042
+expressions: Gematria=1189, Frequency=1, Magnitude=0.9900083263946711
+spiritual: Gematria=809, Frequency=1, Magnitude=0.6736053288925895
+reflections: Gematria=558, Frequency=1, Magnitude=0.4646128226477935
+eternal: Gematria=381, Frequency=1, Magnitude=0.3172356369691923
+symbols: Gematria=1032, Frequency=1, Magnitude=0.8592839300582847
+infinite: Gematria=338, Frequency=1, Magnitude=0.28143213988343047
+representations: Gematria=1035, Frequency=1, Magnitude=0.861781848459617
+boundless: Gematria=651, Frequency=1, Magnitude=0.5420482930890924
+emblems: Gematria=222, Frequency=1, Magnitude=0.18484596169858453
+limitless: Gematria=523, Frequency=1, Magnitude=0.43547044129891754
+icons: Gematria=222, Frequency=1, Magnitude=0.18484596169858453
+unbounded: Gematria=775, Frequency=1, Magnitude=0.6452955870108243
+avatars: Gematria=793, Frequency=1, Magnitude=0.6602830974188176
+unconfined: Gematria=537, Frequency=1, Magnitude=0.44712739383846795
+incarnations: Gematria=623, Frequency=1, Magnitude=0.5187343880099917
+unrestrained: Gematria=904, Frequency=1, Magnitude=0.7527060782681099
+embodiments: Gematria=515, Frequency=1, Magnitude=0.42880932556203166
+unbridled: Gematria=494, Frequency=1, Magnitude=0.4113238967527061
+personifications: Gematria=822, Frequency=1, Magnitude=0.6844296419650291
+uncurbed: Gematria=754, Frequency=1, Magnitude=0.6278101582014988
+allegories: Gematria=337, Frequency=1, Magnitude=0.28059950041631976
+ungoverned: Gematria=971, Frequency=1, Magnitude=0.8084929225645295
+
+Whole Poem:
+==================================================
+Taivos is Chaos in making
+  Taivos is wantonness to sin
+    Taivos is sin to redemption
+      Suora is the way to order
+Suora is the path to light
+  Suora is the road to truth
+    Taivos and Suora are two sides of the same coin
+      Taivos and Suora are two halves of a whole
+Taivos and Suora are two forces that shape our world
+  Taivos and Suora are two energies that drive our lives
+    Taivos and Suora are two principles that govern our existence
+      Taivos and Suora are two aspects of the divine
+Taivos and Suora are two manifestations of the sacred
+  Taivos and Suora are two expressions of the spiritual
+    Taivos and Suora are two reflections of the eternal
+      Taivos and Suora are two symbols of the infinite
+Taivos and Suora are two representations of the boundless
+  Taivos and Suora are two emblems of the limitless
+    Taivos and Suora are two icons of the unbounded
+      Taivos and Suora are two avatars of the unconfined
+Taivos and Suora are two incarnations of the unrestrained
+  Taivos and Suora are two embodiments of the unbridled
+    Taivos and Suora are two personifications of the uncurbed
+      Taivos and Suora are two allegories of the ungoverned
+==================================================
+
+This poem was generated using advanced algorithms and natural language processing techniques.
+It aims to capture the essence of human emotions and experiences through the art of poetry.
+
+Generated by Goddess Taivos and General Suora
