@@ -5,7 +5,7 @@ A sophisticated poetry generation system that uses Scandinavian extended gematri
 ## 🌟 Features
 
 ### Core Algorithms
-- **Gematria Calculation**: Uses Scandinavian extended values (A=1, B=2, ..., Z=800)
+- **Gematria Calculation**: Uses Scandinavian extended values (A=1, B=2, ..., Z=800, Å=900, Ä=1000, Ö=1100)
 - **Word Power Analysis**: Calculates frequency, magnitude, and contextual power for each word
 - **Phrase Depth Indentation**: Creates visual poetry structure with hierarchical spacing
 - **Timestamped Output**: Generates unique base36-encoded timestamps for each poem
@@ -61,7 +61,7 @@ Balance is found between extremes
 
 ### Word Class
 Represents individual words with gematria analysis:
-- **English Extended Gematria**: A=1, B=2, C=3, ..., K=20, L=30, ..., T=200, ..., Z=800
+- **Scandinavian Extended Gematria**: A=1, B=2, C=3, ..., K=20, L=30, ..., T=200, ..., Z=800, Å=900, Ä=1000, Ö=1100
 - **Context Tracking**: Maintains phrase context and power calculations
 - **Punctuation Handling**: Cleanly separates words from punctuation for analysis
 
