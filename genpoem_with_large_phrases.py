@@ -390,7 +390,7 @@ class EnhancedPoemGenerator:
         """Read lines from a text file, returning empty list if file not found."""
         try:
             with open(filename, "r") as file:
-                lines = [line.strip() for line in file if line.strip()]
+                lines = [line.strip() for line in file]
             return lines
         except FileNotFoundError:
             return []
