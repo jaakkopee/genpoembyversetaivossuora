@@ -478,10 +478,10 @@ class EnhancedPoemGenerator:
         txt_files = [f for f in os.listdir('.') if f.endswith('.txt')]
         if txt_files:
             print("Available text files in current directory:")
-            for i, file in enumerate(txt_files[:10], 1):  # Show first 10 files
+            for i, file in enumerate(txt_files[:32], 1):  # Show first 32 files
                 print(f"  {i}. {file}")
-            if len(txt_files) > 10:
-                print(f"  ... and {len(txt_files) - 10} more files")
+            if len(txt_files) > 32:
+                print(f"  ... and {len(txt_files) - 32} more files")
             print()
         
         # Get large phrase database filename from user
