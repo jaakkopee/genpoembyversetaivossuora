@@ -42,10 +42,19 @@ class Word:
         
     def _clean_text(self, text: str) -> str:
         """Remove punctuation from word for gematria calculation."""
-        return text.strip('.,!?;"\'()[]{}')
+        # Strip common punctuation and whitespace
+        cleaned = text.strip('.,!?;"\'()[]{}''""–—¬†‡').strip()
+        # Return empty string if the cleaned text is too short or not alphabetic/numeric
+        if len(cleaned) < 1 or (not any(c.isalpha() for c in cleaned) and not cleaned.isdigit()):
+            return ""
+        return cleaned
     
     def _calculate_gematria(self) -> int:
-        """Calculate the gematria value using Scandinavian extended values."""
+        """Calculate the gematria value using Scandinavian extended values or numeric value for numbers."""
+        # If the cleaned text is a pure number, use its numeric value
+        if self.cleaned_text.isdigit():
+            return int(self.cleaned_text)
+        # Otherwise use traditional gematria
         return sum(self.GEMATRIA_VALUES.get(char, 0) for char in self.cleaned_text)
     
     def __str__(self) -> str:
@@ -125,7 +134,8 @@ class LargePhraseDatabase:
         power_ranges = defaultdict(list)
         
         for word, power_list in self.word_powers.items():
-            if power_list:  # Only consider words that appear in phrases
+            # Only consider valid words that appear in phrases
+            if power_list and word and len(word) >= 2 and any(c.isalpha() for c in word):
                 avg_power = sum(entry['power'] for entry in power_list) / len(power_list)
                 power_range = int(avg_power * 10)  # Group by tenths
                 power_ranges[power_range].append((word, avg_power))
@@ -135,9 +145,23 @@ class LargePhraseDatabase:
             if len(word_list) > 1:  # Only create alternatives if multiple words exist
                 for word, power in word_list:
                     alternatives = {alt_word for alt_word, alt_power in word_list 
-                                  if alt_word != word and abs(alt_power - power) < 0.5}
+                                  if alt_word != word and abs(alt_power - power) < 0.5
+                                  and self._is_valid_alternative(alt_word)}
                     self.word_alternatives[word] = alternatives
     
+    def _is_valid_alternative(self, word: str) -> bool:
+        """Check if a word is a valid alternative (no quotes, special chars, etc.)."""
+        if not word or len(word) < 1:
+            return False
+        # Filter out words with problematic punctuation or special characters
+        problematic_chars = ['\'', '"', ':', '¬', '†', '‡', ''', ''', '"', '"', '–', '—']
+        if any(char in word for char in problematic_chars):
+            return False
+        # Must contain at least one letter OR be a valid number
+        if not any(c.isalpha() for c in word) and not word.isdigit():
+            return False
+        return True
+
     def get_word_power_info(self, word: str) -> List[Dict]:
         """Get power information for a specific word."""
         return self.word_powers.get(word.lower(), [])
@@ -171,11 +195,15 @@ class Phrase:
         self.text = text
         self.large_db = large_db
         
-        # Create enhanced words if database is available
+        # Create enhanced words if database is available, filtering out invalid words
+        raw_words = text.split()
         if large_db:
-            self.words = [large_db.get_enhanced_word(word_text) for word_text in text.split()]
+            self.words = [large_db.get_enhanced_word(word_text) for word_text in raw_words]
         else:
-            self.words = [Word(word_text) for word_text in text.split()]
+            self.words = [Word(word_text) for word_text in raw_words]
+        
+        # Filter out words with empty cleaned_text (punctuation-only, too short, etc.)
+        self.words = [word for word in self.words if word.cleaned_text]
             
         self.word_count = len(self.words)
         
@@ -190,10 +218,11 @@ class Phrase:
     
     def _analyze_words(self):
         """Analyze word frequencies, gematria values, and magnitudes."""
-        # Count frequencies and collect gematria values
+        # Count frequencies and collect gematria values (skip empty cleaned_text)
         for word in self.words:
-            self.frequencies[word.cleaned_text] += 1
-            self.gematria_values[word.cleaned_text] = word.gematria_value
+            if word.cleaned_text:  # Only process valid words
+                self.frequencies[word.cleaned_text] += 1
+                self.gematria_values[word.cleaned_text] = word.gematria_value
         
         # Calculate max gematria for magnitude normalization
         max_gematria = max(self.gematria_values.values()) if self.gematria_values else 1
