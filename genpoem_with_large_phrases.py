@@ -114,7 +114,7 @@ class LargePhraseDatabase:
                         ' ' in line):  # Must contain spaces (multiple words)
                         
                         lines.append(line)
-                        if len(lines) >= 5000:  # Limit for performance
+                        if len(lines) >= 10000:  # Limit for performance
                             break
                 
                 self.phrases = lines
