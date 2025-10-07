@@ -36,6 +36,10 @@ class Word:
         self.gematria_value = self._calculate_gematria()
         self.length = len(self.cleaned_text)
         
+        # Word class (part of speech) information
+        self.word_class = self._determine_word_class(self.cleaned_text)
+        self.class_multiplier = self._get_class_multiplier(self.word_class)
+        
         # Context from large phrase database
         self.phrase_context = phrase_context
         self.phrase_power = phrase_power
@@ -75,11 +79,126 @@ class Word:
         # Otherwise use traditional gematria
         return sum(self.GEMATRIA_VALUES.get(char, 0) for char in self.cleaned_text)
     
+    def _determine_word_class(self, text: str) -> str:
+        """Determine the word class (part of speech) using simple rule-based classification."""
+        if not text or len(text) == 0:
+            return "unknown"
+        
+        # Convert to lowercase for analysis
+        word = text.lower().strip()
+        
+        # Numbers
+        if word.isdigit():
+            return "num"
+            
+        # Common pronouns (closed class)
+        pronouns = {'i', 'you', 'he', 'she', 'it', 'we', 'they', 'me', 'him', 'her', 'us', 'them',
+                   'my', 'your', 'his', 'her', 'its', 'our', 'their', 'mine', 'yours', 'hers', 'ours', 'theirs',
+                   'this', 'that', 'these', 'those', 'who', 'whom', 'what', 'which', 'whose'}
+        if word in pronouns:
+            return "pron"
+            
+        # Common prepositions (closed class)
+        prepositions = {'in', 'on', 'at', 'by', 'for', 'with', 'without', 'to', 'from', 'of', 'about',
+                       'above', 'below', 'under', 'over', 'through', 'between', 'among', 'during',
+                       'before', 'after', 'since', 'until', 'within', 'across', 'along', 'around'}
+        if word in prepositions:
+            return "prep"
+            
+        # Common conjunctions (closed class)
+        conjunctions = {'and', 'or', 'but', 'yet', 'so', 'nor', 'for', 'because', 'since', 'although',
+                       'though', 'while', 'whereas', 'if', 'unless', 'until', 'when', 'where', 'why', 'how'}
+        if word in conjunctions:
+            return "conj"
+            
+        # Common articles and determiners (closed class)
+        determiners = {'the', 'a', 'an', 'this', 'that', 'these', 'those', 'some', 'any', 'all', 'every',
+                      'each', 'either', 'neither', 'both', 'much', 'many', 'few', 'little', 'several'}
+        if word in determiners:
+            return "det"
+            
+        # Common auxiliary verbs (closed class)
+        auxiliaries = {'be', 'is', 'am', 'are', 'was', 'were', 'being', 'been',
+                      'have', 'has', 'had', 'having',
+                      'do', 'does', 'did', 'doing',
+                      'will', 'would', 'shall', 'should', 'can', 'could', 'may', 'might', 'must', 'ought'}
+        if word in auxiliaries:
+            return "aux"
+            
+        # Common adverbs (often end in -ly, but not always)
+        if (word.endswith('ly') and len(word) > 3 and 
+            not word.endswith('ily') and not word.endswith('ally')):
+            return "adv"
+            
+        # Common adverbs that don't end in -ly
+        common_adverbs = {'very', 'quite', 'rather', 'too', 'so', 'more', 'most', 'less', 'least',
+                         'now', 'then', 'here', 'there', 'where', 'when', 'how', 'why',
+                         'always', 'never', 'sometimes', 'often', 'usually', 'rarely',
+                         'yes', 'no', 'not', 'maybe', 'perhaps', 'probably'}
+        if word in common_adverbs:
+            return "adv"
+            
+        # Adjective patterns
+        if (word.endswith('ful') or word.endswith('less') or word.endswith('ous') or 
+            word.endswith('ive') or word.endswith('able') or word.endswith('ible') or
+            word.endswith('ant') or word.endswith('ent') or word.endswith('ing') or
+            word.endswith('ed') and not word.endswith('eed')):
+            return "adj"
+            
+        # Verb patterns (past tense, present participle, etc.)
+        if (word.endswith('ed') or word.endswith('ing') or word.endswith('en') or
+            word.endswith('s') and len(word) > 2):
+            # Could be verb, but need more context - default to verb for now
+            return "v"
+            
+        # Noun patterns (plurals, abstract nouns, etc.)
+        if (word.endswith('s') and len(word) > 2 or
+            word.endswith('tion') or word.endswith('sion') or word.endswith('ment') or
+            word.endswith('ness') or word.endswith('ity') or word.endswith('ism') or
+            word.endswith('er') or word.endswith('or') or word.endswith('ist')):
+            return "n"
+            
+        # Default classification based on common patterns
+        # Short words (1-2 chars) are often function words
+        if len(word) <= 2:
+            return "func"
+            
+        # Medium length words are often nouns or verbs
+        # Default to noun for unknown words (most common class)
+        return "n"
+    
+    def _get_class_multiplier(self, word_class: str) -> float:
+        """Get a multiplier for word power based on word class."""
+        # Different word classes have different semantic weights
+        # Content words (nouns, verbs, adjectives, adverbs) are more semantically important
+        # Function words (prepositions, conjunctions, etc.) are less important
+        
+        multipliers = {
+            'n': 1.2,      # Nouns - high semantic content
+            'v': 1.1,      # Verbs - high semantic content  
+            'adj': 1.0,    # Adjectives - moderate semantic content
+            'adv': 0.9,    # Adverbs - moderate semantic content
+            'pron': 0.7,   # Pronouns - low semantic content
+            'prep': 0.6,   # Prepositions - low semantic content
+            'conj': 0.5,   # Conjunctions - low semantic content
+            'det': 0.5,    # Determiners - low semantic content
+            'aux': 0.6,    # Auxiliary verbs - low semantic content
+            'num': 0.8,    # Numbers - moderate semantic content
+            'func': 0.4,   # Function words - very low semantic content
+            'unknown': 0.8  # Unknown - moderate default
+        }
+        
+        return multipliers.get(word_class, 0.8)
+    
+    def get_enhanced_power(self) -> float:
+        """Calculate enhanced word power including class multiplier."""
+        return self.phrase_power * self.class_multiplier
+    
     def __str__(self) -> str:
         return self.original_text
     
     def __repr__(self) -> str:
-        return f"Word('{self.original_text}', gematria={self.gematria_value}, power={self.phrase_power:.3f})"
+        return f"Word('{self.original_text}', class={self.word_class}, gematria={self.gematria_value}, power={self.phrase_power:.3f})"
 
 
 class LargePhraseDatabase:
@@ -133,15 +252,23 @@ class LargePhraseDatabase:
             temp_phrase = Phrase(phrase_text)
             analysis = temp_phrase.get_word_analysis()
             
-            # Store word powers with their phrase contexts
+            # Store word powers with their phrase contexts including word class info
             for word, (gematria, frequency, magnitude) in analysis.items():
                 power = frequency * magnitude
+                
+                # Get word class information from the temporary phrase
+                word_obj = next((w for w in temp_phrase.words if w.cleaned_text == word), None)
+                word_class = word_obj.word_class if word_obj else "unknown"
+                class_multiplier = word_obj.class_multiplier if word_obj else 1.0
+                
                 self.word_powers[word.lower()].append({
                     'power': power,
                     'phrase': phrase_text,
                     'frequency': frequency,
                     'magnitude': magnitude,
-                    'gematria': gematria
+                    'gematria': gematria,
+                    'word_class': word_class,
+                    'class_multiplier': class_multiplier
                 })
     
     def _calculate_alternatives(self):
@@ -254,22 +381,34 @@ class Phrase:
     def _analyze_words(self):
         """Analyze word frequencies, gematria values, and magnitudes."""
         # Count frequencies and collect gematria values (skip empty cleaned_text)
+        # Also collect word class information
+        word_class_info = {}
         for word in self.words:
             if word.cleaned_text:  # Only process valid words
                 self.frequencies[word.cleaned_text] += 1
                 self.gematria_values[word.cleaned_text] = word.gematria_value
+                # Store word class info for the first occurrence
+                if word.cleaned_text not in word_class_info:
+                    word_class_info[word.cleaned_text] = {
+                        'class': word.word_class,
+                        'multiplier': word.class_multiplier
+                    }
         
         # Calculate max gematria for magnitude normalization
         max_gematria = max(self.gematria_values.values()) if self.gematria_values else 1
         
-        # Calculate magnitudes and word powers
+        # Calculate magnitudes and word powers (enhanced with word class)
         for word_text in self.frequencies:
             gematria = self.gematria_values[word_text]
             frequency = self.frequencies[word_text]
             magnitude = (gematria * frequency) / max_gematria if max_gematria else 0
             
-            self.magnitudes[word_text] = magnitude
-            self.word_powers[word_text] = frequency * magnitude
+            # Apply word class multiplier to enhance semantic importance
+            class_multiplier = word_class_info.get(word_text, {}).get('multiplier', 1.0)
+            enhanced_magnitude = magnitude * class_multiplier
+            
+            self.magnitudes[word_text] = enhanced_magnitude
+            self.word_powers[word_text] = frequency * enhanced_magnitude
     
     def get_word_analysis(self) -> Dict[str, Tuple[int, int, float]]:
         """Return word analysis as (gematria, frequency, magnitude) tuples."""
@@ -318,10 +457,21 @@ class Phrase:
         return " ".join(alternative_words)
     
     def display(self):
-        """Display detailed phrase information including alternatives if available."""
+        """Display detailed phrase information including word class and alternatives if available."""
         analysis = self.get_word_analysis()
-        word_power_str = ', '.join(f"'{word}': ({gem}, {freq}, {mag:.3f})" 
-                                 for word, (gem, freq, mag) in analysis.items())
+        
+        # Create word power string with class information
+        word_info_parts = []
+        for word, (gem, freq, mag) in analysis.items():
+            # Find the word object to get class info
+            word_obj = next((w for w in self.words if w.cleaned_text == word), None)
+            if word_obj:
+                class_info = f"{word_obj.word_class}:{word_obj.class_multiplier:.1f}"
+                word_info_parts.append(f"'{word}': ({gem}, {freq}, {mag:.3f}, {class_info})")
+            else:
+                word_info_parts.append(f"'{word}': ({gem}, {freq}, {mag:.3f})")
+        
+        word_power_str = ', '.join(word_info_parts)
         print(f"Word Power: {{{word_power_str}}}")
         
         # Show alternatives if database is available
