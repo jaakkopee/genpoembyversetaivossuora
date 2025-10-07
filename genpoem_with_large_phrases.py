@@ -42,12 +42,30 @@ class Word:
         
     def _clean_text(self, text: str) -> str:
         """Remove punctuation from word for gematria calculation."""
-        # Strip common punctuation and whitespace
-        cleaned = text.strip('.,!?;"\'()[]{}''""–—¬†‡').strip()
-        # Return empty string if the cleaned text is too short or not alphabetic/numeric
+        import re
+        # Define comprehensive punctuation to remove
+        punctuation_to_remove = [
+            '\'', '"', ':', '¬', '†', '‡', ''', ''', '"', '"', '–', '—',
+            '`', '~', '#', '$', '%', '^', '&', '*', '+', '=', '<', '>', 
+            '/', '\\', '|', '_', '.', ',', '!', '?', ';', '(', ')', 
+            '[', ']', '{', '}', '-'
+        ]
+        
+        # Remove the specified punctuation
+        cleaned = text
+        for punct in punctuation_to_remove:
+            cleaned = cleaned.replace(punct, '')
+        
+        # Remove any remaining non-alphanumeric characters except spaces
+        cleaned = re.sub(r'[^\w\s]', '', cleaned)
+        
+        # Clean up multiple spaces and strip
+        cleaned = re.sub(r'\s+', ' ', cleaned).strip()
+        
+        # Return empty string if no valid content (allow single chars and mixed alphanumeric)
         if len(cleaned) < 1 or (not any(c.isalpha() for c in cleaned) and not cleaned.isdigit()):
             return ""
-        return cleaned
+        return cleaned.lower()
     
     def _calculate_gematria(self) -> int:
         """Calculate the gematria value using Scandinavian extended values or numeric value for numbers."""
@@ -134,8 +152,8 @@ class LargePhraseDatabase:
         power_ranges = defaultdict(list)
         
         for word, power_list in self.word_powers.items():
-            # Only consider valid words that appear in phrases
-            if power_list and word and len(word) >= 2 and any(c.isalpha() for c in word):
+            # Only consider valid words that appear in phrases AND pass validation
+            if power_list and word and len(word) >= 1 and self._is_valid_alternative(word):
                 avg_power = sum(entry['power'] for entry in power_list) / len(power_list)
                 power_range = int(avg_power * 10)  # Group by tenths
                 power_ranges[power_range].append((word, avg_power))
@@ -143,21 +161,36 @@ class LargePhraseDatabase:
         # Create alternative mappings
         for power_range, word_list in power_ranges.items():
             if len(word_list) > 1:  # Only create alternatives if multiple words exist
-                for word, power in word_list:
-                    alternatives = {alt_word for alt_word, alt_power in word_list 
-                                  if alt_word != word and abs(alt_power - power) < 0.5
-                                  and self._is_valid_alternative(alt_word)}
-                    self.word_alternatives[word] = alternatives
+                # Filter the word_list to only include valid alternatives
+                valid_words = [(w, p) for w, p in word_list if self._is_valid_alternative(w)]
+                
+                if len(valid_words) > 1:  # Ensure we still have multiple words after filtering
+                    for word, power in valid_words:
+                        # Additional validation: clean alternatives to ensure no punctuation gets through
+                        alternatives = set()
+                        for alt_word, alt_power in valid_words:
+                            if alt_word != word and abs(alt_power - power) < 0.5:
+                                # Double-check that alternative is clean and valid
+                                if self._is_valid_alternative(alt_word) and not any(c in alt_word for c in "':\".,!?;()[]{}"):
+                                    alternatives.add(alt_word)
+                        
+                        if alternatives:  # Only store if we have actual alternatives
+                            self.word_alternatives[word] = alternatives
     
     def _is_valid_alternative(self, word: str) -> bool:
         """Check if a word is a valid alternative (no quotes, special chars, etc.)."""
-        if not word or len(word) < 1:
+        if not word or len(word) < 1:  # Allow single characters
             return False
-        # Filter out words with problematic punctuation or special characters
-        problematic_chars = ['\'', '"', ':', '¬', '†', '‡', ''', ''', '"', '"', '–', '—']
+        # Comprehensive list of problematic punctuation and special characters
+        problematic_chars = [
+            '\'', '"', ':', '¬', '†', '‡', ''', ''', '"', '"', '–', '—',
+            '`', '~', '#', '$', '%', '^', '&', '*', '+', '=', '<', '>', 
+            '/', '\\', '|', '_', '.', ',', '!', '?', ';', '(', ')', 
+            '[', ']', '{', '}', '-'
+        ]
         if any(char in word for char in problematic_chars):
             return False
-        # Must contain at least one letter OR be a valid number
+        # Must contain at least one letter OR be a valid number (allow mixed alphanumeric)
         if not any(c.isalpha() for c in word) and not word.isdigit():
             return False
         return True
@@ -169,7 +202,9 @@ class LargePhraseDatabase:
     def get_alternatives(self, word: str, count: int = 3) -> List[str]:
         """Get alternative words with similar power levels."""
         alternatives = self.word_alternatives.get(word.lower(), set())
-        return list(alternatives)[:count]
+        # Filter alternatives one more time to ensure no punctuation gets through
+        clean_alternatives = [alt for alt in alternatives if self._is_valid_alternative(alt)]
+        return clean_alternatives[:count]
     
     def get_enhanced_word(self, word_text: str) -> Word:
         """Create an enhanced Word object with phrase context information."""
@@ -258,10 +293,14 @@ class Phrase:
         for word in self.words:
             alternatives = self.large_db.get_alternatives(word.cleaned_text, 3)  # Get more alternatives
             if alternatives and random.random() < aggressiveness:
-                # Choose randomly from available alternatives
+                # Choose randomly from available alternatives and validate it
                 chosen_alt = random.choice(alternatives)
-                alternative_words.append(chosen_alt)
-                changes_made += 1
+                # Double-check the alternative is valid (safety net)
+                if self.large_db._is_valid_alternative(chosen_alt):
+                    alternative_words.append(chosen_alt)
+                    changes_made += 1
+                else:
+                    alternative_words.append(word.original_text)
             else:
                 alternative_words.append(word.original_text)
         
@@ -270,8 +309,11 @@ class Phrase:
             for i, word in enumerate(self.words):
                 alternatives = self.large_db.get_alternatives(word.cleaned_text, 3)
                 if alternatives:
-                    alternative_words[i] = random.choice(alternatives)
-                    break
+                    chosen_alt = random.choice(alternatives)
+                    # Double-check the alternative is valid (safety net)
+                    if self.large_db._is_valid_alternative(chosen_alt):
+                        alternative_words[i] = chosen_alt
+                        break
         
         return " ".join(alternative_words)
     
@@ -389,10 +431,13 @@ class EnhancedPoem:
         """Display the formatted whole poem with indentation."""
         print("Whole Poem:")
         print("=" * 50)
-        for i, phrase_text in enumerate(self.phrase_texts, 1):
-            # Create varying indentation levels
-            indent = "  " * ((i - 1) % 4)
-            print(f"{indent}{phrase_text}")
+        phrase_count = 0
+        for phrase_text in self.phrase_texts:
+            if phrase_text.strip():  # Only display non-empty phrases
+                phrase_count += 1
+                # Create varying indentation levels
+                indent = "  " * ((phrase_count - 1) % 4)
+                print(f"{indent}{phrase_text}")
         print("=" * 50)
 
 
@@ -419,7 +464,7 @@ class EnhancedPoemGenerator:
         """Read lines from a text file, returning empty list if file not found."""
         try:
             with open(filename, "r") as file:
-                lines = [line.strip() for line in file]
+                lines = [line.strip() for line in file if line.strip()]
             return lines
         except FileNotFoundError:
             return []
