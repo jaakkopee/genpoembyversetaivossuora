@@ -472,9 +472,24 @@ class EnhancedPoemGenerator:
     @staticmethod
     def generate_interactive() -> Tuple[EnhancedPoem, str]:
         """Generate an enhanced poem with interactive user input and file output."""
+        import os
+        
+        # Show available text files in current directory
+        txt_files = [f for f in os.listdir('.') if f.endswith('.txt')]
+        if txt_files:
+            print("Available text files in current directory:")
+            for i, file in enumerate(txt_files[:10], 1):  # Show first 10 files
+                print(f"  {i}. {file}")
+            if len(txt_files) > 10:
+                print(f"  ... and {len(txt_files) - 10} more files")
+            print()
+        
+        # Get large phrase database filename from user
+        large_db_filename = input("Enter the large phrase database filename (default: large_phrases.txt): ") or "large_phrases.txt"
+        
         # Initialize large phrase database
-        print("Loading large phrase database...")
-        large_db = LargePhraseDatabase()
+        print(f"Loading large phrase database from {large_db_filename}...")
+        large_db = LargePhraseDatabase(large_db_filename)
         
         # Get filename from user
         file_name = input("Enter the phrase filename (default: phrases.txt): ") or "phrases.txt"
