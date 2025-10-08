@@ -739,16 +739,17 @@ class Phrase:
                         'multiplier': word.class_multiplier
                     }
         
-        # Calculate max gematria for magnitude normalization (with GEMATRIA_INFLUENCE enhancement)
+        # Calculate max gematria for magnitude normalization (apply GEMATRIA_INFLUENCE once)
         max_gematria = max(self.gematria_values.values()) * GEMATRIA_INFLUENCE if self.gematria_values else GEMATRIA_INFLUENCE
         
-        # Calculate magnitudes and word powers (enhanced with word class)
+        # Calculate magnitudes and word powers (corrected formula)
         for word_text in self.frequencies:
             gematria = self.gematria_values[word_text]
             frequency = self.frequencies[word_text]
-            # Apply GEMATRIA_INFLUENCE gematria significance multiplier
+            # Apply GEMATRIA_INFLUENCE to gematria for consistency with max_gematria
             enhanced_gematria = gematria * GEMATRIA_INFLUENCE
-            magnitude = (enhanced_gematria * frequency) / max_gematria if max_gematria else 0
+            # Correct formula: magnitude = gematria / max_gematria_in_phrase
+            magnitude = enhanced_gematria / max_gematria if max_gematria else 0
             
             # Apply word class multiplier to enhance semantic importance
             base_class_multiplier = word_class_info.get(word_text, {}).get('multiplier', 1.0)
@@ -757,7 +758,8 @@ class Phrase:
             enhanced_magnitude = magnitude * pos_enhanced_multiplier
             
             self.magnitudes[word_text] = enhanced_magnitude
-            self.word_powers[word_text] = frequency * enhanced_magnitude
+            # Correct formula: power = magnitude * frequency
+            self.word_powers[word_text] = enhanced_magnitude * frequency
     
     def get_word_analysis(self) -> Dict[str, Tuple[int, int, float]]:
         """Return word analysis as (gematria, frequency, magnitude) tuples."""

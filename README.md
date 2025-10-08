@@ -133,8 +133,8 @@ U=300 V=400 W=500 X=600 Y=700 Z=800 Å=900 Ä=1000 Ö=1100
 
 ### Power Calculations
 - **Frequency**: How often a word appears in the poem
-- **Magnitude**: (Gematria × Frequency) ÷ Maximum_Gematria_in_Phrase  
-- **Word Power**: Frequency × Magnitude
+- **Magnitude**: Gematria ÷ Maximum_Gematria_in_Phrase (gematria influence applied once)
+- **Word Power**: Magnitude × Frequency
 
 ## 📝 Input Files
 
