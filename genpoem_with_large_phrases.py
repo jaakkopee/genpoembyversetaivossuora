@@ -1171,8 +1171,6 @@ class EnhancedPoemGenerator:
         last_phrase = original_phrases[-1] if original_phrases else "No_phrases_generated"
         filename = f"enhanced_{last_phrase.replace(' ', '_')}_{timestamp_str}.txt"
         
-        print(Colors.info(f"Saving enhanced poem to {filename}..."))
-        
         with open(filename, "w") as file:
             # Shuffle phrases for output variety
             shuffled_phrases = original_phrases.copy()
