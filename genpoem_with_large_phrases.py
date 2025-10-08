@@ -16,6 +16,34 @@ from collections import defaultdict
 from typing import List, Dict, Tuple, Optional, Set
 import re
 
+# Global configuration parameter for gematria influence on word power calculations
+GEMATRIA_INFLUENCE = 1.6  # Multiplier for gematria significance (1.0 = normal, >1.0 = enhanced)
+"""
+GEMATRIA_INFLUENCE Usage Mapping:
+- Phrase._analyze_words(): Lines ~635, 641 (phrase-level magnitude calculation)
+- EnhancedPoem._analyze_overall(): Lines ~763, 769 (poem-level magnitude calculation)
+
+This parameter controls how much weight gematria values have in word power calculations.
+Values > 1.0 increase gematria significance, values < 1.0 decrease it.
+"""
+
+
+def set_gematria_influence(influence: float) -> None:
+    """Set the global gematria influence parameter.
+    
+    Args:
+        influence: Multiplier for gematria significance
+                  1.0 = normal, >1.0 = enhanced, <1.0 = diminished
+    """
+    global GEMATRIA_INFLUENCE
+    GEMATRIA_INFLUENCE = influence
+    print(Colors.info(f"Gematria influence set to {influence}x"))
+
+
+def get_gematria_influence() -> float:
+    """Get the current gematria influence parameter."""
+    return GEMATRIA_INFLUENCE
+
 
 class Colors:
     """ANSI color codes for terminal output."""
@@ -628,14 +656,16 @@ class Phrase:
                         'multiplier': word.class_multiplier
                     }
         
-        # Calculate max gematria for magnitude normalization
-        max_gematria = max(self.gematria_values.values()) if self.gematria_values else 1
+        # Calculate max gematria for magnitude normalization (with GEMATRIA_INFLUENCE enhancement)
+        max_gematria = max(self.gematria_values.values()) * GEMATRIA_INFLUENCE if self.gematria_values else GEMATRIA_INFLUENCE
         
         # Calculate magnitudes and word powers (enhanced with word class)
         for word_text in self.frequencies:
             gematria = self.gematria_values[word_text]
             frequency = self.frequencies[word_text]
-            magnitude = (gematria * frequency) / max_gematria if max_gematria else 0
+            # Apply GEMATRIA_INFLUENCE gematria significance multiplier
+            enhanced_gematria = gematria * GEMATRIA_INFLUENCE
+            magnitude = (enhanced_gematria * frequency) / max_gematria if max_gematria else 0
             
             # Apply word class multiplier to enhance semantic importance
             class_multiplier = word_class_info.get(word_text, {}).get('multiplier', 1.0)
@@ -755,14 +785,16 @@ class EnhancedPoem:
                 self.overall_frequencies[word_text] += frequency
                 self.overall_gematria_values[word_text] = phrase.gematria_values[word_text]
         
-        # Calculate overall max gematria for magnitude normalization
-        max_gematria = max(self.overall_gematria_values.values()) if self.overall_gematria_values else 1
+        # Calculate overall max gematria for magnitude normalization (with GEMATRIA_INFLUENCE enhancement)
+        max_gematria = max(self.overall_gematria_values.values()) * GEMATRIA_INFLUENCE if self.overall_gematria_values else GEMATRIA_INFLUENCE
         
         # Calculate overall magnitudes
         for word_text in self.overall_frequencies:
             gematria = self.overall_gematria_values[word_text]
             frequency = self.overall_frequencies[word_text]
-            magnitude = (gematria * frequency) / max_gematria if max_gematria else 0
+            # Apply GEMATRIA_INFLUENCE gematria significance multiplier
+            enhanced_gematria = gematria * GEMATRIA_INFLUENCE
+            magnitude = (enhanced_gematria * frequency) / max_gematria if max_gematria else 0
             self.overall_magnitudes[word_text] = magnitude
         
         # Create the combined analysis dictionary
@@ -785,7 +817,7 @@ class EnhancedPoem:
             return self
         
         # Show progress bar for generating alternatives
-        loader = IterativeLoader(f"Generating alternative version ({int(aggressiveness*100)}% aggressiveness)", "bars")
+        loader = IterativeLoader(f"Generating alternative version ({int(aggressiveness*100)}% aggressiveness, Gematria influence: {get_gematria_influence()}x)", "bars")
         loader.start()
         
         alternative_phrases = []
@@ -867,16 +899,38 @@ class EnhancedPoemGenerator:
         """Generate an enhanced poem with interactive user input and file output."""
         import os
         
+        # Get gematria influence setting from user
+        print(f"{Colors.info('Current gematria influence:')} {Colors.number(str(get_gematria_influence()))}x")
+        print(Colors.dim("Gematria influence controls how much weight letter values have in word power calculations."))
+        print(Colors.dim("1.0 = normal, >1.0 = enhanced gematria significance, <1.0 = reduced significance"))
+        print(Colors.dim("Changes take effect during database analysis and will affect word alternatives."))
+        
+        gematria_input = input(f"\n{Colors.highlight('Enter gematria influence multiplier')} (default: {get_gematria_influence()}): ").strip()
+        if gematria_input:
+            try:
+                new_influence = float(gematria_input)
+                if new_influence > 0:
+                    set_gematria_influence(new_influence)
+                    if new_influence != 1.0:
+                        multiplier_desc = "enhanced" if new_influence > 1.0 else "reduced"
+                        print(Colors.success(f"Gematria influence updated to {new_influence}x ({multiplier_desc} significance)"))
+                else:
+                    print(Colors.warning("Invalid value: must be positive number. Using current setting."))
+            except ValueError:
+                print(Colors.warning("Invalid number format. Using current setting."))
+        else:
+            print(Colors.info(f"Using default gematria influence: {get_gematria_influence()}x"))
+        
         # Show available text files in current directory
         txt_files = [f for f in os.listdir('.') if f.endswith('.txt')]
         if txt_files:
             print(Colors.info("Available text files in current directory:"))
-            for i, file in enumerate(txt_files[:32], 1):  # Show first 32 files
+            for i, file in enumerate(txt_files[:50], 1):  # Show first 50 files
                 print(f"  {Colors.number(str(i))}. {Colors.dim(file)}")
-            if len(txt_files) > 32:
-                print(Colors.dim(f"  ... and {len(txt_files) - 32} more files"))
+            if len(txt_files) > 50:
+                print(Colors.dim(f"  ... and {len(txt_files) - 50} more files"))
             print()
-        
+
         # Get large phrase database filename from user
         large_db_filename = input(f"\n{Colors.highlight('Enter the large phrase database filename')} (default: large_phrases.txt): ") or "large_phrases.txt"
         
@@ -933,12 +987,14 @@ class EnhancedPoemGenerator:
             
             # Moderate alternatives
             alt_poem_moderate = poem.generate_alternative_version(0.5)
-            print(f"\n{Colors.header('Moderate Alternative (50% substitution):')}")
+            print(f"\n{Colors.header('Moderate Alternative (50% substitution, Gematria influence: {get_gematria_influence()}x)')}")
+            print(f"{Colors.info('Gematria influence:')} {Colors.number(str(get_gematria_influence()))}x")
             alt_poem_moderate.display_whole_poem()
             
             # Aggressive alternatives
             alt_poem_aggressive = poem.generate_alternative_version(0.9)
-            print(f"\n{Colors.header('Aggressive Alternative (90% substitution):')}")
+            print(f"\n{Colors.header('Aggressive Alternative (90% substitution), Gematria influence: {get_gematria_influence()}x')}")
+            print(f"{Colors.info('Gematria influence:')} {Colors.number(str(get_gematria_influence()))}x")
             alt_poem_aggressive.display_whole_poem()
         
         # Save to file
@@ -965,6 +1021,7 @@ class EnhancedPoemGenerator:
             
             # Write header information
             file.write(f"Enhanced Poem with {poem.phrase_count} phrases and {poem.word_count_overall} words.\n")
+            file.write(f"Gematria influence: {get_gematria_influence()}x\n")
             file.write(f"Database: {len(large_db.phrases)} reference phrases analyzed.\n")
             file.write(f"Timestamp: {timestamp_str}\n")
             file.write(f"Last Phrase: {last_phrase}\n")
@@ -1042,6 +1099,10 @@ def example_programmatic_usage():
     print(Colors.header("Enhanced Programmatic Usage Example:"))
     print(Colors.dim("-" * 40))
     
+    # Show current gematria influence
+    print(f"{Colors.info('Current gematria influence:')} {Colors.number(str(get_gematria_influence()))}x")
+    print()
+    
     # Load large phrase database
     loader = IterativeLoader("Loading database", "bars")
     loader.start()
@@ -1090,6 +1151,16 @@ def example_programmatic_usage():
     alt_poem_aggressive = poem.generate_alternative_version(0.9)
     print(Colors.header("Aggressive alternative version (90% substitution):"))
     alt_poem_aggressive.display_whole_poem()
+    
+    # Demonstrate gematria influence adjustment
+    print()
+    print(Colors.info("Demonstrating gematria influence adjustment:"))
+    print(f"  {Colors.dim('Original influence:')} {Colors.number(str(get_gematria_influence()))}x")
+    
+    # Note: In practice, you would need to regenerate the database and poem 
+    # after changing gematria influence for the changes to take effect
+    print(f"  {Colors.dim('Use set_gematria_influence(value) to adjust gematria weight in calculations')}")
+    print(f"  {Colors.dim('Higher values = more gematria influence, lower values = less influence')}")
 
 
 if __name__ == "__main__":
