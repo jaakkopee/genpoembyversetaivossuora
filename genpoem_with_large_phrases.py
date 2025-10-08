@@ -16,8 +16,12 @@ from collections import defaultdict
 from typing import List, Dict, Tuple, Optional, Set
 import re
 
-# Global configuration parameter for gematria influence on word power calculations
-GEMATRIA_INFLUENCE = 1.6  # Multiplier for gematria significance (1.0 = normal, >1.0 = enhanced)
+# Global configuration parameters for word power calculations
+GEMATRIA_INFLUENCE = 1.6    # Multiplier for gematria significance (1.0 = normal, >1.0 = enhanced)
+POS_INFLUENCE = 1.0         # Multiplier for part-of-speech class significance (1.0 = normal, >1.0 = enhanced)
+POWER_SUBSTITUTION = 0.5    # Aggressiveness of word substitution (0.0 = no substitution, 1.0 = maximum substitution)
+WORD_ALTERNATIVE_COUNT = 5  # Number of alternative words to generate for each word (minimum 1)
+
 """
 GEMATRIA_INFLUENCE Usage Mapping:
 - Phrase._analyze_words(): Lines ~635, 641 (phrase-level magnitude calculation)
@@ -25,6 +29,25 @@ GEMATRIA_INFLUENCE Usage Mapping:
 
 This parameter controls how much weight gematria values have in word power calculations.
 Values > 1.0 increase gematria significance, values < 1.0 decrease it.
+
+POS_INFLUENCE Usage Mapping:
+- Phrase._analyze_words(): Lines ~644 (word class multiplier application)
+- Word._get_class_multiplier(): Enhanced by POS_INFLUENCE scaling
+
+This parameter controls how much weight part-of-speech classifications have in word power calculations.
+
+POWER_SUBSTITUTION Usage Mapping:
+- generate_interactive(): User input for substitution aggressiveness
+- EnhancedPoem.generate_alternative_version(): Controls word replacement probability
+
+This parameter controls how aggressively words are substituted with alternatives (0.0-1.0 range).
+
+WORD_ALTERNATIVE_COUNT Usage Mapping:
+- LargePhraseDatabase.get_alternatives(): Controls number of alternatives returned
+- Phrase.get_enhanced_alternatives(): Uses alternative count for word replacement
+
+This parameter controls how many alternative words are generated for each word (minimum 1).
+Values > 1.0 amplify POS class differences, values < 1.0 reduce POS class impact.
 """
 
 
@@ -37,12 +60,67 @@ def set_gematria_influence(influence: float) -> None:
     """
     global GEMATRIA_INFLUENCE
     GEMATRIA_INFLUENCE = influence
-    print(Colors.info(f"Gematria influence set to {influence}x"))
 
 
 def get_gematria_influence() -> float:
     """Get the current gematria influence parameter."""
     return GEMATRIA_INFLUENCE
+
+
+def set_pos_influence(influence: float) -> None:
+    """Set the global part-of-speech influence parameter.
+    
+    Args:
+        influence: Multiplier for POS class significance
+                  1.0 = normal, >1.0 = enhanced POS differences, <1.0 = reduced POS differences
+    """
+    if influence <= 0:
+        raise ValueError("POS influence must be positive")
+    
+    global POS_INFLUENCE
+    POS_INFLUENCE = influence
+
+
+def get_pos_influence() -> float:
+    """Get the current part-of-speech influence parameter."""
+    return POS_INFLUENCE
+
+
+def set_power_substitution(aggressiveness: float) -> None:
+    """Set the global power substitution aggressiveness parameter.
+    
+    Args:
+        aggressiveness: Word substitution aggressiveness
+                       0.0 = no substitution, 0.5 = moderate, 1.0 = maximum substitution
+    """
+    if not (0.0 <= aggressiveness <= 1.0):
+        raise ValueError("Power substitution must be between 0.0 and 1.0")
+    
+    global POWER_SUBSTITUTION
+    POWER_SUBSTITUTION = aggressiveness
+
+
+def get_power_substitution() -> float:
+    """Get the current power substitution aggressiveness parameter."""
+    return POWER_SUBSTITUTION
+
+
+def set_word_alternative_count(count: int) -> None:
+    """Set the global word alternative count parameter.
+    
+    Args:
+        count: Number of alternative words to generate for each word (minimum 1)
+    """
+    if count < 1:
+        raise ValueError("Word alternative count must be at least 1")
+    
+    global WORD_ALTERNATIVE_COUNT
+    WORD_ALTERNATIVE_COUNT = count
+
+
+def get_word_alternative_count() -> int:
+    """Get the current word alternative count parameter."""
+    return WORD_ALTERNATIVE_COUNT
 
 
 class Colors:
@@ -415,8 +493,10 @@ class Word:
         return multipliers.get(word_class, 0.8)
     
     def get_enhanced_power(self) -> float:
-        """Calculate enhanced word power including class multiplier."""
-        return self.phrase_power * self.class_multiplier
+        """Calculate enhanced word power including POS-influenced class multiplier."""
+        # Apply POS_INFLUENCE to amplify or reduce POS class differences
+        pos_enhanced_multiplier = 1.0 + (self.class_multiplier - 1.0) * POS_INFLUENCE
+        return self.phrase_power * pos_enhanced_multiplier
     
     def __str__(self) -> str:
         return self.original_text
@@ -588,8 +668,11 @@ class LargePhraseDatabase:
         """Get power information for a specific word."""
         return self.word_powers.get(word.lower(), [])
     
-    def get_alternatives(self, word: str, count: int = 3) -> List[str]:
+    def get_alternatives(self, word: str, count: int = None) -> List[str]:
         """Get alternative words with similar power levels."""
+        if count is None:
+            count = get_word_alternative_count()
+        
         alternatives = self.word_alternatives.get(word.lower(), set())
         # Filter alternatives one more time to ensure no punctuation gets through
         clean_alternatives = [alt for alt in alternatives if self._is_valid_alternative(alt)]
@@ -668,8 +751,10 @@ class Phrase:
             magnitude = (enhanced_gematria * frequency) / max_gematria if max_gematria else 0
             
             # Apply word class multiplier to enhance semantic importance
-            class_multiplier = word_class_info.get(word_text, {}).get('multiplier', 1.0)
-            enhanced_magnitude = magnitude * class_multiplier
+            base_class_multiplier = word_class_info.get(word_text, {}).get('multiplier', 1.0)
+            # Apply POS_INFLUENCE to amplify or reduce POS class differences
+            pos_enhanced_multiplier = 1.0 + (base_class_multiplier - 1.0) * POS_INFLUENCE
+            enhanced_magnitude = magnitude * pos_enhanced_multiplier
             
             self.magnitudes[word_text] = enhanced_magnitude
             self.word_powers[word_text] = frequency * enhanced_magnitude
@@ -694,7 +779,7 @@ class Phrase:
         changes_made = 0
         
         for word in self.words:
-            alternatives = self.large_db.get_alternatives(word.cleaned_text, 3)  # Get more alternatives
+            alternatives = self.large_db.get_alternatives(word.cleaned_text)  # Use global alternative count
             if alternatives and random.random() < aggressiveness:
                 # Choose randomly from available alternatives and validate it
                 chosen_alt = random.choice(alternatives)
@@ -710,7 +795,7 @@ class Phrase:
         # If no changes were made, force at least one change if alternatives exist
         if changes_made == 0 and aggressiveness > 0.5:
             for i, word in enumerate(self.words):
-                alternatives = self.large_db.get_alternatives(word.cleaned_text, 3)
+                alternatives = self.large_db.get_alternatives(word.cleaned_text)  # Use global alternative count
                 if alternatives:
                     chosen_alt = random.choice(alternatives)
                     # Double-check the alternative is valid (safety net)
@@ -817,7 +902,7 @@ class EnhancedPoem:
             return self
         
         # Show progress bar for generating alternatives
-        loader = IterativeLoader(f"Generating alternative version ({int(aggressiveness*100)}% aggressiveness, Gematria influence: {get_gematria_influence()}x)", "bars")
+        loader = IterativeLoader("Generating alternative version", "bars")
         loader.start()
         
         alternative_phrases = []
@@ -901,9 +986,7 @@ class EnhancedPoemGenerator:
         
         # Get gematria influence setting from user
         print(f"{Colors.info('Current gematria influence:')} {Colors.number(str(get_gematria_influence()))}x")
-        print(Colors.dim("Gematria influence controls how much weight letter values have in word power calculations."))
-        print(Colors.dim("1.0 = normal, >1.0 = enhanced gematria significance, <1.0 = reduced significance"))
-        print(Colors.dim("Changes take effect during database analysis and will affect word alternatives."))
+        print(Colors.dim("Controls letter value weight in calculations. 1.0=normal, >1.0=enhanced, <1.0=reduced"))
         
         gematria_input = input(f"\n{Colors.highlight('Enter gematria influence multiplier')} (default: {get_gematria_influence()}): ").strip()
         if gematria_input:
@@ -913,13 +996,73 @@ class EnhancedPoemGenerator:
                     set_gematria_influence(new_influence)
                     if new_influence != 1.0:
                         multiplier_desc = "enhanced" if new_influence > 1.0 else "reduced"
-                        print(Colors.success(f"Gematria influence updated to {new_influence}x ({multiplier_desc} significance)"))
+                        print(Colors.success(f"Gematria influence updated to {new_influence}x ({multiplier_desc})"))
                 else:
                     print(Colors.warning("Invalid value: must be positive number. Using current setting."))
             except ValueError:
                 print(Colors.warning("Invalid number format. Using current setting."))
         else:
             print(Colors.info(f"Using default gematria influence: {get_gematria_influence()}x"))
+        
+        # Get POS influence setting from user
+        print(f"\n{Colors.info('Current POS influence:')} {Colors.number(str(get_pos_influence()))}x")
+        print(Colors.dim("Controls word class weight (noun/verb/etc). 1.0=normal, >1.0=amplified, <1.0=reduced"))
+        
+        pos_input = input(f"\n{Colors.highlight('Enter POS influence multiplier')} (default: {get_pos_influence()}): ").strip()
+        if pos_input:
+            try:
+                new_pos_influence = float(pos_input)
+                if new_pos_influence > 0:
+                    set_pos_influence(new_pos_influence)
+                    if new_pos_influence != 1.0:
+                        pos_desc = "amplified" if new_pos_influence > 1.0 else "reduced"
+                        print(Colors.success(f"POS influence updated to {new_pos_influence}x ({pos_desc})"))
+                else:
+                    print(Colors.warning("Invalid value: must be positive number. Using current setting."))
+            except ValueError:
+                print(Colors.warning("Invalid number format. Using current setting."))
+        else:
+            print(Colors.info(f"Using default POS influence: {get_pos_influence()}x"))
+        
+        # Get power substitution setting from user
+        print(f"\n{Colors.info('Current power substitution:')} {Colors.number(f'{get_power_substitution():.1f}')} ({int(get_power_substitution()*100)}% aggressiveness)")
+        print(Colors.dim("Controls word replacement aggressiveness. 0.0=none, 0.5=moderate, 1.0=maximum"))
+        
+        power_input = input(f"\n{Colors.highlight('Enter power substitution aggressiveness')} (default: {get_power_substitution():.1f}): ").strip()
+        if power_input:
+            try:
+                new_power_sub = float(power_input)
+                if 0.0 <= new_power_sub <= 1.0:
+                    set_power_substitution(new_power_sub)
+                    if new_power_sub != 0.5:
+                        power_desc = "high" if new_power_sub > 0.5 else "low" if new_power_sub < 0.5 else "moderate"
+                        print(Colors.success(f"Power substitution updated to {new_power_sub:.1f} ({power_desc})"))
+                else:
+                    print(Colors.warning("Invalid value: must be between 0.0 and 1.0. Using current setting."))
+            except ValueError:
+                print(Colors.warning("Invalid number format. Using current setting."))
+        else:
+            print(Colors.info(f"Using default power substitution: {get_power_substitution():.1f}"))
+        
+        # Get word alternative count setting from user
+        print(f"\n{Colors.info('Current word alternative count:')} {Colors.number(str(get_word_alternative_count()))}")
+        print(Colors.dim("Controls how many alternative words are generated for each word. Higher=more variety"))
+        
+        alt_count_input = input(f"\n{Colors.highlight('Enter word alternative count')} (default: {get_word_alternative_count()}): ").strip()
+        if alt_count_input:
+            try:
+                new_alt_count = int(alt_count_input)
+                if new_alt_count >= 1:
+                    set_word_alternative_count(new_alt_count)
+                    if new_alt_count != 5:
+                        count_desc = "high" if new_alt_count > 5 else "low" if new_alt_count < 5 else "standard"
+                        print(Colors.success(f"Word alternative count updated to {new_alt_count} ({count_desc} variety)"))
+                else:
+                    print(Colors.warning("Invalid value: must be at least 1. Using current setting."))
+            except ValueError:
+                print(Colors.warning("Invalid number format. Using current setting."))
+        else:
+            print(Colors.info(f"Using default word alternative count: {get_word_alternative_count()}"))
         
         # Show available text files in current directory
         txt_files = [f for f in os.listdir('.') if f.endswith('.txt')]
@@ -983,19 +1126,12 @@ class EnhancedPoemGenerator:
             choice = 'n'
             
         if choice.startswith('y'):
-            print(f"\n{Colors.info('Generating alternative versions...')}")
-            
-            # Moderate alternatives
-            alt_poem_moderate = poem.generate_alternative_version(0.5)
-            print(f"\n{Colors.header('Moderate Alternative (50% substitution, Gematria influence: {get_gematria_influence()}x)')}")
-            print(f"{Colors.info('Gematria influence:')} {Colors.number(str(get_gematria_influence()))}x")
-            alt_poem_moderate.display_whole_poem()
-            
-            # Aggressive alternatives
-            alt_poem_aggressive = poem.generate_alternative_version(0.9)
-            print(f"\n{Colors.header('Aggressive Alternative (90% substitution), Gematria influence: {get_gematria_influence()}x')}")
-            print(f"{Colors.info('Gematria influence:')} {Colors.number(str(get_gematria_influence()))}x")
-            alt_poem_aggressive.display_whole_poem()
+            # Generate single alternative with user-specified aggressiveness
+            aggressiveness = get_power_substitution()
+            alt_poem = poem.generate_alternative_version(aggressiveness)
+            print(f"\n{Colors.header('Alternative Version')}")
+            print(f"{Colors.dim('Settings:')} Gematria: {Colors.number(str(get_gematria_influence()))}x, POS: {Colors.number(str(get_pos_influence()))}x, Substitution: {Colors.number(f'{aggressiveness:.1f}')} ({int(aggressiveness*100)}%), Alternatives: {Colors.number(str(get_word_alternative_count()))}")
+            alt_poem.display_whole_poem()
         
         # Save to file
         return EnhancedPoemGenerator._save_poem_to_file(poem, phrases, large_db)
@@ -1016,20 +1152,19 @@ class EnhancedPoemGenerator:
         with open(filename, "w") as file:
             # Shuffle phrases for output variety
             shuffled_phrases = original_phrases.copy()
-            random.seed(time.time())
-            random.shuffle(shuffled_phrases)
+            # random.seed(time.time())
+            # andom.shuffle(shuffled_phrases)
             
             # Write header information
             file.write(f"Enhanced Poem with {poem.phrase_count} phrases and {poem.word_count_overall} words.\n")
             file.write(f"Gematria influence: {get_gematria_influence()}x\n")
+            file.write(f"POS influence: {get_pos_influence()}x\n")
+            file.write(f"Power substitution: {get_power_substitution():.1f} ({int(get_power_substitution()*100)}% aggressiveness)\n")
+            file.write(f"Word alternative count: {get_word_alternative_count()}\n")
             file.write(f"Database: {len(large_db.phrases)} reference phrases analyzed.\n")
             file.write(f"Timestamp: {timestamp_str}\n")
             file.write(f"Last Phrase: {last_phrase}\n")
-            
-            # Write generated phrases
-            file.write("\nGenerated Phrases:\n")
-            for phrase in shuffled_phrases:
-                file.write(f"{phrase}\n")
+
             
             # Write overall word powers
             file.write("\nOverall Poem Word Powers:\n")
@@ -1037,12 +1172,12 @@ class EnhancedPoemGenerator:
                 file.write(f"{word}: Gematria={gem}, Frequency={freq}, Magnitude={mag}\n")
                 
                 # Add alternatives information
-                alternatives = large_db.get_alternatives(word, 3)
+                alternatives = large_db.get_alternatives(word, WORD_ALTERNATIVE_COUNT)
                 if alternatives:
                     file.write(f"  Alternatives: {', '.join(alternatives)}\n")
             
             # Write formatted whole poem
-            file.write("\nWhole Poem:\n")
+            file.write("\nWhole Original Poem:\n")
             file.write("=" * 50 + "\n")
             for i, phrase_text in enumerate(original_phrases, 1):
                 indent = "  " * ((i - 1) % 4)
@@ -1050,19 +1185,11 @@ class EnhancedPoemGenerator:
             file.write("=" * 50 + "\n")
             
             # Generate and write alternative versions with different aggressiveness levels
-            alt_poem_moderate = poem.generate_alternative_version(0.5)
-            alt_poem_aggressive = poem.generate_alternative_version(0.9)
-            
-            file.write("\nAlternative Version (moderate substitution - 50%):\n")
+            alt_poem = poem.generate_alternative_version(get_power_substitution())
+
+            file.write(f"\nAlternative Version (substitution - {get_power_substitution()*100:.0f}%):\n")
             file.write("=" * 50 + "\n")
-            for i, phrase_text in enumerate(alt_poem_moderate.phrase_texts, 1):
-                indent = "  " * ((i - 1) % 4)
-                file.write(f"{indent}{phrase_text}\n")
-            file.write("=" * 50 + "\n")
-            
-            file.write("\nAlternative Version (aggressive substitution - 90%):\n")
-            file.write("=" * 50 + "\n")
-            for i, phrase_text in enumerate(alt_poem_aggressive.phrase_texts, 1):
+            for i, phrase_text in enumerate(alt_poem.phrase_texts, 1):
                 indent = "  " * ((i - 1) % 4)
                 file.write(f"{indent}{phrase_text}\n")
             file.write("=" * 50 + "\n")
@@ -1099,8 +1226,11 @@ def example_programmatic_usage():
     print(Colors.header("Enhanced Programmatic Usage Example:"))
     print(Colors.dim("-" * 40))
     
-    # Show current gematria influence
+    # Show current influences
     print(f"{Colors.info('Current gematria influence:')} {Colors.number(str(get_gematria_influence()))}x")
+    print(f"{Colors.info('Current POS influence:')} {Colors.number(str(get_pos_influence()))}x")
+    print(f"{Colors.info('Current power substitution:')} {Colors.number(f'{get_power_substitution():.1f}')} ({int(get_power_substitution()*100)}%)")
+    print(f"{Colors.info('Current word alternative count:')} {Colors.number(str(get_word_alternative_count()))}")
     print()
     
     # Load large phrase database
@@ -1132,7 +1262,7 @@ def example_programmatic_usage():
     print()
     
     # Show alternatives
-    alternatives = large_db.get_alternatives("chaos", 5)
+    alternatives = large_db.get_alternatives("chaos")  # Use global alternative count
     if alternatives:
         print(f"{Colors.info('Alternatives for')} {Colors.word('chaos')}: {Colors.phrase(str(alternatives))}")
     print()
@@ -1141,26 +1271,27 @@ def example_programmatic_usage():
     poem.display_whole_poem()
     print()
     
-    # Show moderate alternatives
-    alt_poem_moderate = poem.generate_alternative_version(0.5)
-    print(Colors.header("Moderate alternative version (50% substitution):"))
-    alt_poem_moderate.display_whole_poem()
-    print()
+    # Show alternative version with current power substitution setting
+    aggressiveness = get_power_substitution()
+    alt_poem = poem.generate_alternative_version(aggressiveness)
+    print(Colors.header(f"Alternative version ({int(aggressiveness*100)}% substitution):"))
+    alt_poem.display_whole_poem()
     
-    # Show aggressive alternatives  
-    alt_poem_aggressive = poem.generate_alternative_version(0.9)
-    print(Colors.header("Aggressive alternative version (90% substitution):"))
-    alt_poem_aggressive.display_whole_poem()
-    
-    # Demonstrate gematria influence adjustment
+    # Demonstrate parameter adjustment
     print()
-    print(Colors.info("Demonstrating gematria influence adjustment:"))
-    print(f"  {Colors.dim('Original influence:')} {Colors.number(str(get_gematria_influence()))}x")
+    print(Colors.info("Demonstrating parameter adjustments:"))
+    print(f"  {Colors.dim('Original gematria influence:')} {Colors.number(str(get_gematria_influence()))}x")
+    print(f"  {Colors.dim('Original POS influence:')} {Colors.number(str(get_pos_influence()))}x")
+    print(f"  {Colors.dim('Original power substitution:')} {Colors.number(f'{get_power_substitution():.1f}')}")
+    print(f"  {Colors.dim('Original word alternative count:')} {Colors.number(str(get_word_alternative_count()))}")
     
     # Note: In practice, you would need to regenerate the database and poem 
-    # after changing gematria influence for the changes to take effect
+    # after changing influences for the changes to take effect
     print(f"  {Colors.dim('Use set_gematria_influence(value) to adjust gematria weight in calculations')}")
-    print(f"  {Colors.dim('Higher values = more gematria influence, lower values = less influence')}")
+    print(f"  {Colors.dim('Use set_pos_influence(value) to adjust part-of-speech weight in calculations')}")
+    print(f"  {Colors.dim('Use set_power_substitution(value) to adjust word substitution aggressiveness')}")
+    print(f"  {Colors.dim('Use set_word_alternative_count(value) to adjust number of alternatives per word')}")
+    print(f"  {Colors.dim('Higher values = more influence/aggressiveness/variety, lower values = less')}")
 
 
 if __name__ == "__main__":
