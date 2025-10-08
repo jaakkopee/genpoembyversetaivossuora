@@ -11,9 +11,105 @@ uses these encoded words as intelligent alternatives for poem generation.
 
 import time
 import random
+import sys
 from collections import defaultdict
 from typing import List, Dict, Tuple, Optional, Set
 import re
+
+
+class IterativeLoader:
+    """An iteration-based loading animation system that updates per operation."""
+    
+    def __init__(self, message: str, style: str = "spinner"):
+        """Initialize the loader with a message and style.
+        
+        Args:
+            message: The loading message to display
+            style: Animation style - 'spinner', 'dots', 'bars', 'pulse'
+        """
+        self.message = message
+        self.style = style
+        self.iteration = 0
+        self.started = False
+        
+        # Define animation frames for different styles
+        if style == "spinner":
+            self.frames = "|/-\\"
+        elif style == "dots":
+            self.frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"]
+        elif style == "bars":
+            self.frames = ["▱▱▱", "▰▱▱", "▰▰▱", "▰▰▰", "▱▰▰", "▱▱▰"]
+        elif style == "pulse":
+            self.frames = ["●", "◐", "◑", "◒", "◓", "◔", "◕", "○"]
+        elif style == "arrow":
+            self.frames = ["←", "↖", "↑", "↗", "→", "↘", "↓", "↙"]
+        else:
+            self.frames = "|/-\\"
+    
+    def start(self):
+        """Start the loading animation."""
+        if not self.started:
+            print()
+            print(f"{self.message} ", end="", flush=True)
+            self.started = True
+            self.update()
+    
+    def update(self):
+        """Update the animation to the next frame."""
+        if self.started:
+            # Clear previous frame
+            if self.iteration > 0:
+                prev_frame = self.frames[(self.iteration - 1) % len(self.frames)]
+                if len(prev_frame) > 1:
+                    print(f"\033[{len(prev_frame)}D" + " " * len(prev_frame) + f"\033[{len(prev_frame)}D", end="", flush=True)
+                else:
+                    print("\b \b", end="", flush=True)
+            
+            # Show current frame
+            current_frame = self.frames[self.iteration % len(self.frames)]
+            print(current_frame, end="", flush=True)
+            self.iteration += 1
+    
+    def finish(self, success: bool = True):
+        """Finish the loading animation with success or failure indicator."""
+        if self.started:
+            # Clear the last frame
+            if self.iteration > 0:
+                last_frame = self.frames[(self.iteration - 1) % len(self.frames)]
+                if len(last_frame) > 1:
+                    print(f"\033[{len(last_frame)}D" + " " * len(last_frame) + f"\033[{len(last_frame)}D", end="", flush=True)
+                else:
+                    print("\b \b", end="", flush=True)
+            
+            # Show completion indicator
+            if success:
+                print("✓")
+            else:
+                print("✗")
+            
+            self.started = False
+
+
+def simple_loading_animation(message: str, iterations: int, style: str = "bars"):
+    """Simple function for loading animation over a known number of iterations.
+    
+    Args:
+        message: The loading message
+        iterations: Total number of iterations to animate over
+        style: Animation style
+    
+    Returns:
+        Generator that yields progress updates
+    """
+    loader = IterativeLoader(message, style)
+    loader.start()
+    
+    for i in range(iterations):
+        if i % max(1, iterations // 20) == 0:  # Update every 5% of progress
+            loader.update()
+        yield i
+    
+    loader.finish()
 
 
 class Word:
@@ -218,10 +314,18 @@ class LargePhraseDatabase:
     def _load_phrases(self):
         """Load phrases from the large file, filtering for meaningful content."""
         try:
+            # Show animated loading while reading file
+            loader = IterativeLoader(f"Reading {self.filename}", "bars")
+            loader.start()
+            
             with open(self.filename, "r", encoding="utf-8", errors="ignore") as file:
                 lines = []
                 for line_num, line in enumerate(file, 1):
                     line = line.strip()
+                    
+                    # Update animation every 100 lines
+                    if line_num % 100 == 0:
+                        loader.update()
                     
                     # Filter for meaningful phrases (sentences with reasonable length)
                     if (line and 
@@ -237,17 +341,25 @@ class LargePhraseDatabase:
                             break
                 
                 self.phrases = lines
+                loader.finish(True)
                 print(f"Loaded {len(self.phrases)} meaningful phrases from {self.filename}")
                 
         except FileNotFoundError:
+            loader.finish(False)
             print(f"Warning: {self.filename} not found. Using empty database.")
             self.phrases = []
     
     def _analyze_phrases(self):
         """Analyze each phrase and calculate word powers within their contexts."""
-        print("Analyzing phrase contexts and word powers...")
+        # Show animated loading while analyzing
+        loader = IterativeLoader("Analyzing phrase contexts and word powers", "bars")
+        loader.start()
         
-        for phrase_text in self.phrases:
+        for i, phrase_text in enumerate(self.phrases):
+            # Update animation every 50 phrases
+            if i % 50 == 0:
+                loader.update()
+                
             # Create a temporary Phrase object to get word analysis
             temp_phrase = Phrase(phrase_text)
             analysis = temp_phrase.get_word_analysis()
@@ -270,29 +382,49 @@ class LargePhraseDatabase:
                     'word_class': word_class,
                     'class_multiplier': class_multiplier
                 })
+        
+        loader.finish(True)
     
     def _calculate_alternatives(self):
         """Calculate word alternatives based on similar power levels."""
-        print("Calculating word alternatives based on power similarity...")
+        # Show animated loading while calculating alternatives
+        loader = IterativeLoader("Calculating word alternatives based on power similarity", "bars")
+        loader.start()
         
         # Group words by power ranges for alternatives
         power_ranges = defaultdict(list)
         
-        for word, power_list in self.word_powers.items():
+        word_list = list(self.word_powers.items())
+        for i, (word, power_list) in enumerate(word_list):
+            # Update animation every 25 words (more frequent updates)
+            if i % 25 == 0:
+                loader.update()
+                
             # Only consider valid words that appear in phrases AND pass validation
             if power_list and word and len(word) >= 1 and self._is_valid_alternative(word):
                 avg_power = sum(entry['power'] for entry in power_list) / len(power_list)
                 power_range = int(avg_power * 10)  # Group by tenths
                 power_ranges[power_range].append((word, avg_power))
         
+        loader.update()
+        
         # Create alternative mappings
-        for power_range, word_list in power_ranges.items():
+        power_range_list = list(power_ranges.items())
+        for i, (power_range, word_list) in enumerate(power_range_list):
+            # Update animation every 3 power ranges (more frequent updates)
+            if i % 3 == 0:
+                loader.update()
+                
             if len(word_list) > 1:  # Only create alternatives if multiple words exist
                 # Filter the word_list to only include valid alternatives
                 valid_words = [(w, p) for w, p in word_list if self._is_valid_alternative(w)]
                 
                 if len(valid_words) > 1:  # Ensure we still have multiple words after filtering
-                    for word, power in valid_words:
+                    for j, (word, power) in enumerate(valid_words):
+                        # Update animation more frequently during intensive processing
+                        if j % 5 == 0:
+                            loader.update()
+                            
                         # Additional validation: clean alternatives to ensure no punctuation gets through
                         alternatives = set()
                         for alt_word, alt_power in valid_words:
@@ -303,6 +435,8 @@ class LargePhraseDatabase:
                         
                         if alternatives:  # Only store if we have actual alternatives
                             self.word_alternatives[word] = alternatives
+        
+        loader.finish(True)
     
     def _is_valid_alternative(self, word: str) -> bool:
         """Check if a word is a valid alternative (no quotes, special chars, etc.)."""
@@ -550,11 +684,20 @@ class EnhancedPoem:
         if not self.large_db:
             return self
         
+        # Show progress bar for generating alternatives
+        loader = IterativeLoader(f"Generating alternative version ({int(aggressiveness*100)}% aggressiveness)", "bars")
+        loader.start()
+        
         alternative_phrases = []
-        for phrase in self.phrases:
+        for i, phrase in enumerate(self.phrases):
+            # Update progress bar every phrase (since phrase count is usually small)
+            if i % 1 == 0:
+                loader.update()
+                
             alt_phrase = phrase.get_enhanced_alternatives(aggressiveness)
             alternative_phrases.append(alt_phrase)
         
+        loader.finish(True)
         return EnhancedPoem(alternative_phrases, self.large_db)
     
     def display_summary(self):
@@ -635,14 +778,19 @@ class EnhancedPoemGenerator:
             print()
         
         # Get large phrase database filename from user
-        large_db_filename = input("Enter the large phrase database filename (default: large_phrases.txt): ") or "large_phrases.txt"
+        large_db_filename = input("\nEnter the large phrase database filename (default: large_phrases.txt): ") or "large_phrases.txt"
         
-        # Initialize large phrase database
-        print(f"Loading large phrase database from {large_db_filename}...")
+        # Initialize large phrase database with animated loading
+        print()  # Add line break before loader starts
+        loader = IterativeLoader(f"Initializing large phrase database from {large_db_filename}", "bars")
+        loader.start()
         large_db = LargePhraseDatabase(large_db_filename)
+        loader.finish(True)
+        print()
         
         # Get filename from user
-        file_name = input("Enter the phrase filename (default: phrases.txt): ") or "phrases.txt"
+        file_name = input("\nEnter the phrase filename (default: phrases.txt): ") or "phrases.txt"
+        print()  # Add line break after input
         
         # Read phrases from file
         phrases = EnhancedPoemGenerator.read_lines_from_file(file_name)
@@ -795,8 +943,10 @@ def example_programmatic_usage():
     print("-" * 40)
     
     # Load large phrase database
-    print("Loading database...")
+    loader = IterativeLoader("Loading database", "bars")
+    loader.start()
     large_db = LargePhraseDatabase()
+    loader.finish(True)
     
     # Create some example phrases
     phrases = [
