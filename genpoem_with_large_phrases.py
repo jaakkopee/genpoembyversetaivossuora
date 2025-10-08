@@ -17,6 +17,106 @@ from typing import List, Dict, Tuple, Optional, Set
 import re
 
 
+class Colors:
+    """ANSI color codes for terminal output."""
+    
+    # Reset
+    RESET = '\033[0m'
+    
+    # Regular colors
+    BLACK = '\033[30m'
+    RED = '\033[31m'
+    GREEN = '\033[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    MAGENTA = '\033[35m'
+    CYAN = '\033[36m'
+    WHITE = '\033[37m'
+    
+    # Bright colors
+    BRIGHT_BLACK = '\033[90m'
+    BRIGHT_RED = '\033[91m'
+    BRIGHT_GREEN = '\033[92m'
+    BRIGHT_YELLOW = '\033[93m'
+    BRIGHT_BLUE = '\033[94m'
+    BRIGHT_MAGENTA = '\033[95m'
+    BRIGHT_CYAN = '\033[96m'
+    BRIGHT_WHITE = '\033[97m'
+    
+    # Background colors
+    BG_BLACK = '\033[40m'
+    BG_RED = '\033[41m'
+    BG_GREEN = '\033[42m'
+    BG_YELLOW = '\033[43m'
+    BG_BLUE = '\033[44m'
+    BG_MAGENTA = '\033[45m'
+    BG_CYAN = '\033[46m'
+    BG_WHITE = '\033[47m'
+    
+    # Styles
+    BOLD = '\033[1m'
+    DIM = '\033[2m'
+    UNDERLINE = '\033[4m'
+    BLINK = '\033[5m'
+    REVERSE = '\033[7m'
+    STRIKETHROUGH = '\033[9m'
+    
+    @staticmethod
+    def colorize(text: str, color: str) -> str:
+        """Apply color to text."""
+        return f"{color}{text}{Colors.RESET}"
+    
+    @staticmethod
+    def header(text: str) -> str:
+        """Format text as a colorful header."""
+        return f"{Colors.BOLD}{Colors.BRIGHT_CYAN}{text}{Colors.RESET}"
+    
+    @staticmethod
+    def success(text: str) -> str:
+        """Format text as a success message."""
+        return f"{Colors.BRIGHT_GREEN}{text}{Colors.RESET}"
+    
+    @staticmethod
+    def warning(text: str) -> str:
+        """Format text as a warning message."""
+        return f"{Colors.BRIGHT_YELLOW}{text}{Colors.RESET}"
+    
+    @staticmethod
+    def error(text: str) -> str:
+        """Format text as an error message."""
+        return f"{Colors.BRIGHT_RED}{text}{Colors.RESET}"
+    
+    @staticmethod
+    def info(text: str) -> str:
+        """Format text as an info message."""
+        return f"{Colors.BRIGHT_BLUE}{text}{Colors.RESET}"
+    
+    @staticmethod
+    def highlight(text: str) -> str:
+        """Format text as highlighted."""
+        return f"{Colors.BOLD}{Colors.BRIGHT_YELLOW}{text}{Colors.RESET}"
+    
+    @staticmethod
+    def dim(text: str) -> str:
+        """Format text as dimmed."""
+        return f"{Colors.DIM}{text}{Colors.RESET}"
+    
+    @staticmethod
+    def phrase(text: str) -> str:
+        """Format text as a phrase (magenta)."""
+        return f"{Colors.BRIGHT_MAGENTA}{text}{Colors.RESET}"
+    
+    @staticmethod
+    def word(text: str) -> str:
+        """Format text as a word (cyan)."""
+        return f"{Colors.CYAN}{text}{Colors.RESET}"
+    
+    @staticmethod
+    def number(text: str) -> str:
+        """Format text as a number (green)."""
+        return f"{Colors.GREEN}{text}{Colors.RESET}"
+
+
 class IterativeLoader:
     """An iteration-based loading animation system that updates per operation."""
     
@@ -50,7 +150,7 @@ class IterativeLoader:
         """Start the loading animation."""
         if not self.started:
             print()
-            print(f"{self.message} ", end="", flush=True)
+            print(f"{Colors.info(self.message)} ", end="", flush=True)
             self.started = True
             self.update()
     
@@ -83,9 +183,9 @@ class IterativeLoader:
             
             # Show completion indicator
             if success:
-                print("✓")
+                print(Colors.success("✓"))
             else:
-                print("✗")
+                print(Colors.error("✗"))
             
             self.started = False
 
@@ -342,11 +442,11 @@ class LargePhraseDatabase:
                 
                 self.phrases = lines
                 loader.finish(True)
-                print(f"Loaded {len(self.phrases)} meaningful phrases from {self.filename}")
+                print(Colors.success(f"Loaded {len(self.phrases)} meaningful phrases from {self.filename}"))
                 
         except FileNotFoundError:
             loader.finish(False)
-            print(f"Warning: {self.filename} not found. Using empty database.")
+            print(Colors.warning(f"Warning: {self.filename} not found. Using empty database."))
             self.phrases = []
     
     def _analyze_phrases(self):
@@ -606,18 +706,18 @@ class Phrase:
                 word_info_parts.append(f"'{word}': ({gem}, {freq}, {mag:.3f})")
         
         word_power_str = ', '.join(word_info_parts)
-        print(f"Word Power: {{{word_power_str}}}")
+        print(f"{Colors.dim('Word Power:')} {{{word_power_str}}}")
         
         # Show alternatives if database is available
         if self.large_db:
             alternative_phrase = self.get_enhanced_alternatives(0.8)  # High aggressiveness for display
             if alternative_phrase != self.text:
-                print(f"Alternative: {alternative_phrase}")
+                print(f"{Colors.highlight('Alternative:')} {Colors.phrase(alternative_phrase)}")
             else:
                 # Try with maximum aggressiveness if no changes
                 max_alt = self.get_enhanced_alternatives(1.0)
                 if max_alt != self.text:
-                    print(f"Max Alternative: {max_alt}")
+                    print(f"{Colors.highlight('Max Alternative:')} {Colors.phrase(max_alt)}")
     
     def __str__(self) -> str:
         return self.text
@@ -702,9 +802,9 @@ class EnhancedPoem:
     
     def display_summary(self):
         """Display a summary of the poem with database info."""
-        print(f"Enhanced Poem with {self.phrase_count} phrases and {self.word_count_overall} words.")
+        print(Colors.info(f"Enhanced Poem with {Colors.number(str(self.phrase_count))} phrases and {Colors.number(str(self.word_count_overall))} words."))
         if self.large_db:
-            print(f"Database: {len(self.large_db.phrases)} reference phrases loaded.")
+            print(Colors.info(f"Database: {Colors.number(str(len(self.large_db.phrases)))} reference phrases loaded."))
     
     def display_phrases(self):
         """Display all phrases in the poem."""
@@ -714,24 +814,24 @@ class EnhancedPoem:
     
     def display_detailed_analysis(self):
         """Display detailed phrase-by-phrase analysis with alternatives."""
-        print("Detailed Phrase Information:")
+        print(Colors.header("Detailed Phrase Information:"))
         for i, phrase in enumerate(self.phrases, 1):
-            print(f"Phrase {i}:")
+            print(f"{Colors.highlight(f'Phrase {i}:')}")
             phrase.display()
             print()
     
     def display_whole_poem(self):
         """Display the formatted whole poem with indentation."""
-        print("Whole Poem:")
-        print("=" * 50)
+        print(Colors.header("Whole Poem:"))
+        print(Colors.dim("=" * 50))
         phrase_count = 0
         for phrase_text in self.phrase_texts:
             if phrase_text.strip():  # Only display non-empty phrases
                 phrase_count += 1
                 # Create varying indentation levels
                 indent = "  " * ((phrase_count - 1) % 4)
-                print(f"{indent}{phrase_text}")
-        print("=" * 50)
+                print(f"{indent}{Colors.phrase(phrase_text)}")
+        print(Colors.dim("=" * 50))
 
 
 class EnhancedPoemGenerator:
@@ -770,15 +870,15 @@ class EnhancedPoemGenerator:
         # Show available text files in current directory
         txt_files = [f for f in os.listdir('.') if f.endswith('.txt')]
         if txt_files:
-            print("Available text files in current directory:")
+            print(Colors.info("Available text files in current directory:"))
             for i, file in enumerate(txt_files[:32], 1):  # Show first 32 files
-                print(f"  {i}. {file}")
+                print(f"  {Colors.number(str(i))}. {Colors.dim(file)}")
             if len(txt_files) > 32:
-                print(f"  ... and {len(txt_files) - 32} more files")
+                print(Colors.dim(f"  ... and {len(txt_files) - 32} more files"))
             print()
         
         # Get large phrase database filename from user
-        large_db_filename = input("\nEnter the large phrase database filename (default: large_phrases.txt): ") or "large_phrases.txt"
+        large_db_filename = input(f"\n{Colors.highlight('Enter the large phrase database filename')} (default: large_phrases.txt): ") or "large_phrases.txt"
         
         # Initialize large phrase database with animated loading
         print()  # Add line break before loader starts
@@ -789,7 +889,7 @@ class EnhancedPoemGenerator:
         print()
         
         # Get filename from user
-        file_name = input("\nEnter the phrase filename (default: phrases.txt): ") or "phrases.txt"
+        file_name = input(f"\n{Colors.highlight('Enter the phrase filename')} (default: phrases.txt): ") or "phrases.txt"
         print()  # Add line break after input
         
         # Read phrases from file
@@ -807,14 +907,14 @@ class EnhancedPoemGenerator:
         poem = EnhancedPoem(phrases, large_db)
         
         # Display initial summary
-        print("\nGenerated Enhanced Poem:\n")
+        print(f"\n{Colors.header('Generated Enhanced Poem:')}\n")
         poem.display_summary()
         
         # Wait for user input
         try:
-            input("\nPress Enter to see detailed phrase information...\n")
+            input(f"\n{Colors.highlight('Press Enter to see detailed phrase information...')}\n")
         except EOFError:
-            print("\nPress Enter to see detailed phrase information...")
+            print(f"\n{Colors.highlight('Press Enter to see detailed phrase information...')}")
         
         # Display detailed analysis
         poem.display_detailed_analysis()
@@ -824,21 +924,21 @@ class EnhancedPoemGenerator:
         
         # Ask if user wants to see alternative version
         try:
-            choice = input("\nGenerate alternative version using word alternatives? (y/N): ").lower()
+            choice = input(f"\n{Colors.highlight('Generate alternative version using word alternatives?')} (y/N): ").lower()
         except EOFError:
             choice = 'n'
             
         if choice.startswith('y'):
-            print("\nGenerating alternative versions...")
+            print(f"\n{Colors.info('Generating alternative versions...')}")
             
             # Moderate alternatives
             alt_poem_moderate = poem.generate_alternative_version(0.5)
-            print("\nModerate Alternative (50% substitution):")
+            print(f"\n{Colors.header('Moderate Alternative (50% substitution):')}")
             alt_poem_moderate.display_whole_poem()
             
             # Aggressive alternatives
             alt_poem_aggressive = poem.generate_alternative_version(0.9)
-            print("\nAggressive Alternative (90% substitution):")
+            print(f"\n{Colors.header('Aggressive Alternative (90% substitution):')}")
             alt_poem_aggressive.display_whole_poem()
         
         # Save to file
@@ -855,7 +955,7 @@ class EnhancedPoemGenerator:
         last_phrase = original_phrases[-1] if original_phrases else "No_phrases_generated"
         filename = f"enhanced_{last_phrase.replace(' ', '_')}_{timestamp_str}.txt"
         
-        print(f"\nSaving enhanced poem to {filename}...")
+        print(Colors.info(f"Saving enhanced poem to {filename}..."))
         
         with open(filename, "w") as file:
             # Shuffle phrases for output variety
@@ -916,31 +1016,31 @@ class EnhancedPoemGenerator:
             file.write("Word alternatives calculated based on contextual power similarity.\n")
             file.write("\nGenerated by Goddess Taivos and General Suora\n")
         
-        print(f"Enhanced poem saved to {filename}")
+        print(Colors.success(f"Enhanced poem saved to {filename}"))
         return poem, filename
 
 
 def main():
     """Main function for interactive enhanced poem generation."""
-    print("Enhanced Poem Generator with Large Phrase Database")
-    print("=" * 50)
+    print(Colors.header("Enhanced Poem Generator with Large Phrase Database"))
+    print(Colors.dim("=" * 50))
     
     try:
         poem, filename = EnhancedPoemGenerator.generate_interactive()
-        print(f"\nGeneration complete! Enhanced poem saved as: {filename}")
+        print(Colors.success(f"\nGeneration complete! Enhanced poem saved as: {filename}"))
         
     except KeyboardInterrupt:
-        print("\nPoem generation cancelled by user.")
+        print(Colors.warning("\nPoem generation cancelled by user."))
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(Colors.error(f"An error occurred: {e}"))
         import traceback
         traceback.print_exc()
 
 
 def example_programmatic_usage():
     """Example of how to use the enhanced classes programmatically."""
-    print("Enhanced Programmatic Usage Example:")
-    print("-" * 40)
+    print(Colors.header("Enhanced Programmatic Usage Example:"))
+    print(Colors.dim("-" * 40))
     
     # Load large phrase database
     loader = IterativeLoader("Loading database", "bars")
@@ -964,16 +1064,16 @@ def example_programmatic_usage():
     
     # Show enhanced word example
     enhanced_word = large_db.get_enhanced_word("chaos")
-    print(f"Enhanced word example: {enhanced_word}")
+    print(f"{Colors.info('Enhanced word example:')} {Colors.word(str(enhanced_word))}")
     if enhanced_word.phrase_context:
-        print(f"  Context phrase: {enhanced_word.phrase_context[:80]}...")
-        print(f"  Power in context: {enhanced_word.phrase_power:.3f}")
+        print(f"  {Colors.dim('Context phrase:')} {enhanced_word.phrase_context[:80]}...")
+        print(f"  {Colors.dim('Power in context:')} {Colors.number(f'{enhanced_word.phrase_power:.3f}')}")
     print()
     
     # Show alternatives
     alternatives = large_db.get_alternatives("chaos", 5)
     if alternatives:
-        print(f"Alternatives for 'chaos': {alternatives}")
+        print(f"{Colors.info('Alternatives for')} {Colors.word('chaos')}: {Colors.phrase(str(alternatives))}")
     print()
     
     # Show whole poem and alternatives with different aggressiveness
@@ -982,13 +1082,13 @@ def example_programmatic_usage():
     
     # Show moderate alternatives
     alt_poem_moderate = poem.generate_alternative_version(0.5)
-    print("Moderate alternative version (50% substitution):")
+    print(Colors.header("Moderate alternative version (50% substitution):"))
     alt_poem_moderate.display_whole_poem()
     print()
     
     # Show aggressive alternatives  
     alt_poem_aggressive = poem.generate_alternative_version(0.9)
-    print("Aggressive alternative version (90% substitution):")
+    print(Colors.header("Aggressive alternative version (90% substitution):"))
     alt_poem_aggressive.display_whole_poem()
 
 
