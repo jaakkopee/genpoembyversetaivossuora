@@ -860,6 +860,7 @@ class EnhancedPoem:
         self.overall_frequencies = defaultdict(int)
         self.overall_gematria_values = defaultdict(int)
         self.overall_magnitudes = defaultdict(float)
+        self.overall_word_powers = defaultdict(float)
         self.WORD_FREQ_MAG_GEM = {}
         
         self._analyze_overall()
@@ -875,23 +876,25 @@ class EnhancedPoem:
         # Calculate overall max gematria for magnitude normalization (with GEMATRIA_INFLUENCE enhancement)
         max_gematria = max(self.overall_gematria_values.values()) * GEMATRIA_INFLUENCE if self.overall_gematria_values else GEMATRIA_INFLUENCE
         
-        # Calculate overall magnitudes
+        # Calculate overall magnitudes and word powers (corrected formula)
         for word_text in self.overall_frequencies:
             gematria = self.overall_gematria_values[word_text]
             frequency = self.overall_frequencies[word_text]
-            # Apply GEMATRIA_INFLUENCE gematria significance multiplier
+            # Apply GEMATRIA_INFLUENCE consistently (corrected formula)
             enhanced_gematria = gematria * GEMATRIA_INFLUENCE
-            magnitude = (enhanced_gematria * frequency) / max_gematria if max_gematria else 0
+            magnitude = enhanced_gematria / max_gematria if max_gematria else 0
+            word_power = magnitude * frequency
             self.overall_magnitudes[word_text] = magnitude
+            self.overall_word_powers[word_text] = word_power
         
-        # Create the combined analysis dictionary
+        # Create the combined analysis dictionary with word powers
         self.WORD_FREQ_MAG_GEM = {
-            word: (self.overall_gematria_values[word], self.overall_frequencies[word], self.overall_magnitudes[word])
+            word: (self.overall_gematria_values[word], self.overall_frequencies[word], self.overall_magnitudes[word], self.overall_word_powers[word])
             for word in self.overall_frequencies
         }
     
-    def get_encoded_poem(self) -> Dict[str, Tuple[int, int, float]]:
-        """Return the encoded poem analysis."""
+    def get_encoded_poem(self) -> Dict[str, Tuple[int, int, float, float]]:
+        """Return the encoded poem analysis with gematria, frequency, magnitude, and power."""
         return self.WORD_FREQ_MAG_GEM.copy()
     
     def generate_alternative_version(self, aggressiveness: float = 0.7) -> 'EnhancedPoem':
@@ -1170,8 +1173,8 @@ class EnhancedPoemGenerator:
             
             # Write overall word powers
             file.write("\nOverall Poem Word Powers:\n")
-            for word, (gem, freq, mag) in poem.WORD_FREQ_MAG_GEM.items():
-                file.write(f"{word}: Gematria={gem}, Frequency={freq}, Magnitude={mag}\n")
+            for word, (gem, freq, mag, power) in poem.WORD_FREQ_MAG_GEM.items():
+                file.write(f"{word}: Gematria={gem}, Frequency={freq}, Magnitude={mag:.3f}, Power={power:.3f}\n")
                 
                 # Add alternatives information
                 alternatives = large_db.get_alternatives(word, WORD_ALTERNATIVE_COUNT)
