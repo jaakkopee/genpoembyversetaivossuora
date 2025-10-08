@@ -512,7 +512,7 @@ class LargePhraseDatabase:
         power_range_list = list(power_ranges.items())
         for i, (power_range, word_list) in enumerate(power_range_list):
             # Update animation every 3 power ranges (more frequent updates)
-            if i % 3 == 0:
+            if i % 10 == 0:
                 loader.update()
                 
             if len(word_list) > 1:  # Only create alternatives if multiple words exist
@@ -522,7 +522,7 @@ class LargePhraseDatabase:
                 if len(valid_words) > 1:  # Ensure we still have multiple words after filtering
                     for j, (word, power) in enumerate(valid_words):
                         # Update animation more frequently during intensive processing
-                        if j % 5 == 0:
+                        if j % 10 == 0:
                             loader.update()
                             
                         # Additional validation: clean alternatives to ensure no punctuation gets through
@@ -791,7 +791,7 @@ class EnhancedPoem:
         alternative_phrases = []
         for i, phrase in enumerate(self.phrases):
             # Update progress bar every phrase (since phrase count is usually small)
-            if i % 1 == 0:
+            if i % 8 == 0:
                 loader.update()
                 
             alt_phrase = phrase.get_enhanced_alternatives(aggressiveness)
