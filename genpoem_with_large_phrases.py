@@ -23,31 +23,19 @@ POWER_SUBSTITUTION = 0.5    # Aggressiveness of word substitution (0.0 = no subs
 WORD_ALTERNATIVE_COUNT = 5  # Number of alternative words to generate for each word (minimum 1)
 
 """
-GEMATRIA_INFLUENCE Usage Mapping:
-- Phrase._analyze_words(): Lines ~635, 641 (phrase-level magnitude calculation)
-- EnhancedPoem._analyze_overall(): Lines ~763, 769 (poem-level magnitude calculation)
+Global Parameter Usage:
 
-This parameter controls how much weight gematria values have in word power calculations.
-Values > 1.0 increase gematria significance, values < 1.0 decrease it.
+GEMATRIA_INFLUENCE: Controls gematria weight in calculations (1.0=normal, >1.0=enhanced)
+- Applied once in Phrase._analyze_words() for consistent magnitude calculations
 
-POS_INFLUENCE Usage Mapping:
-- Phrase._analyze_words(): Lines ~644 (word class multiplier application)
-- Word._get_class_multiplier(): Enhanced by POS_INFLUENCE scaling
+POS_INFLUENCE: Controls part-of-speech class significance (1.0=normal, >1.0=amplified)  
+- Applied in Phrase._analyze_words() for word class multiplier scaling
 
-This parameter controls how much weight part-of-speech classifications have in word power calculations.
+POWER_SUBSTITUTION: Controls word replacement aggressiveness (0.0-1.0 range)
+- Used in generate_alternative_version() to determine substitution probability
 
-POWER_SUBSTITUTION Usage Mapping:
-- generate_interactive(): User input for substitution aggressiveness
-- EnhancedPoem.generate_alternative_version(): Controls word replacement probability
-
-This parameter controls how aggressively words are substituted with alternatives (0.0-1.0 range).
-
-WORD_ALTERNATIVE_COUNT Usage Mapping:
-- LargePhraseDatabase.get_alternatives(): Controls number of alternatives returned
-- Phrase.get_enhanced_alternatives(): Uses alternative count for word replacement
-
-This parameter controls how many alternative words are generated for each word (minimum 1).
-Values > 1.0 amplify POS class differences, values < 1.0 reduce POS class impact.
+WORD_ALTERNATIVE_COUNT: Controls alternative word generation count (minimum 1)
+- Used in get_alternatives() to limit returned alternative word count
 """
 
 
@@ -537,12 +525,13 @@ class LargePhraseDatabase:
                     
                     # Filter for meaningful phrases (sentences with reasonable length)
                     if (line and 
-                        len(line) > 15 and 
-                        len(line) < 200 and
+                        len(line) > 10 and 
+                        len(line) < 500 and  # Increased limit for longer sentences
                         not line.isupper() and  # Skip all caps headers
                         not line.isdigit() and  # Skip page numbers
                         not re.match(r'^[^a-zA-Z]*$', line) and  # Skip non-alphabetic lines
-                        ' ' in line):  # Must contain spaces (multiple words)
+                        ' ' in line and  # Must contain spaces (multiple words)
+                        re.search(r'[a-zA-Z]', line)):  # Must contain letters
                         
                         lines.append(line)
                         if len(lines) >= 10000:  # Limit for performance
@@ -573,8 +562,7 @@ class LargePhraseDatabase:
             analysis = temp_phrase.get_word_analysis()
             
             # Store word powers with their phrase contexts including word class info
-            for word, (gematria, frequency, magnitude) in analysis.items():
-                power = frequency * magnitude
+            for word, (gematria, frequency, magnitude, power) in analysis.items():
                 
                 # Get word class information from the temporary phrase
                 word_obj = next((w for w in temp_phrase.words if w.cleaned_text == word), None)
@@ -720,17 +708,23 @@ class Phrase:
         self.magnitudes = defaultdict(float)
         self.word_powers = defaultdict(float)
         
-        # Calculate analysis
+        # Calculate analysis (will be recalculated later with poem frequencies if needed)
         self._analyze_words()
     
-    def _analyze_words(self):
-        """Analyze word frequencies, gematria values, and magnitudes."""
-        # Count frequencies and collect gematria values (skip empty cleaned_text)
+    def _analyze_words(self, poem_frequencies=None):
+        """Analyze word frequencies, gematria values, and magnitudes.
+        
+        Args:
+            poem_frequencies: Optional dict of poem-wide word frequencies to use instead of phrase frequencies
+        """
+        # Count local frequencies and collect gematria values (skip empty cleaned_text)
         # Also collect word class information
         word_class_info = {}
+        local_frequencies = defaultdict(int)
+        
         for word in self.words:
             if word.cleaned_text:  # Only process valid words
-                self.frequencies[word.cleaned_text] += 1
+                local_frequencies[word.cleaned_text] += 1
                 self.gematria_values[word.cleaned_text] = word.gematria_value
                 # Store word class info for the first occurrence
                 if word.cleaned_text not in word_class_info:
@@ -738,6 +732,16 @@ class Phrase:
                         'class': word.word_class,
                         'multiplier': word.class_multiplier
                     }
+        
+        # Use poem frequencies if provided, otherwise use local phrase frequencies
+        if poem_frequencies is not None:
+            # Use poem-wide frequencies for power calculations
+            self.frequencies = defaultdict(int)
+            for word_text in local_frequencies:
+                self.frequencies[word_text] = poem_frequencies.get(word_text, local_frequencies[word_text])
+        else:
+            # Use local phrase frequencies (original behavior)
+            self.frequencies = local_frequencies
         
         # Calculate max gematria for magnitude normalization (apply GEMATRIA_INFLUENCE once)
         max_gematria = max(self.gematria_values.values()) * GEMATRIA_INFLUENCE if self.gematria_values else GEMATRIA_INFLUENCE
@@ -761,12 +765,16 @@ class Phrase:
             # Correct formula: power = magnitude * frequency
             self.word_powers[word_text] = enhanced_magnitude * frequency
     
-    def get_word_analysis(self) -> Dict[str, Tuple[int, int, float]]:
-        """Return word analysis as (gematria, frequency, magnitude) tuples."""
+    def get_word_analysis(self) -> Dict[str, Tuple[int, int, float, float]]:
+        """Return word analysis as (gematria, frequency, magnitude, power) tuples."""
         return {
-            word: (self.gematria_values[word], self.frequencies[word], self.magnitudes[word])
+            word: (self.gematria_values[word], self.frequencies[word], self.magnitudes[word], self.word_powers[word])
             for word in self.frequencies
         }
+    
+    def recalculate_with_poem_frequencies(self, poem_frequencies: Dict[str, int]):
+        """Recalculate word powers using poem-wide frequencies instead of phrase frequencies."""
+        self._analyze_words(poem_frequencies)
     
     def get_enhanced_alternatives(self, aggressiveness: float = 0.7) -> str:
         """Generate an alternative version of the phrase using word alternatives.
@@ -813,14 +821,14 @@ class Phrase:
         
         # Create word power string with class information
         word_info_parts = []
-        for word, (gem, freq, mag) in analysis.items():
+        for word, (gem, freq, mag, power) in analysis.items():
             # Find the word object to get class info
             word_obj = next((w for w in self.words if w.cleaned_text == word), None)
             if word_obj:
                 class_info = f"{word_obj.word_class}:{word_obj.class_multiplier:.1f}"
-                word_info_parts.append(f"'{word}': ({gem}, {freq}, {mag:.3f}, {class_info})")
+                word_info_parts.append(f"'{word}': ({gem}, {freq}, {mag:.3f}, {power:.3f}, {class_info})")
             else:
-                word_info_parts.append(f"'{word}': ({gem}, {freq}, {mag:.3f})")
+                word_info_parts.append(f"'{word}': ({gem}, {freq}, {mag:.3f}, {power:.3f})")
         
         word_power_str = ', '.join(word_info_parts)
         print(f"{Colors.dim('Word Power:')} {{{word_power_str}}}")
@@ -866,26 +874,37 @@ class EnhancedPoem:
         self._analyze_overall()
     
     def _analyze_overall(self):
-        """Analyze word statistics across the entire poem."""
-        # Collect frequencies and gematria values from all phrases
+        """Analyze word statistics across the entire poem using poem-wide frequencies."""
+        # First pass: collect poem-wide frequencies and gematria values
+        poem_frequencies = defaultdict(int)
         for phrase in self.phrases:
-            for word_text, frequency in phrase.frequencies.items():
-                self.overall_frequencies[word_text] += frequency
-                self.overall_gematria_values[word_text] = phrase.gematria_values[word_text]
+            for word in phrase.words:
+                if word.cleaned_text:
+                    poem_frequencies[word.cleaned_text] += 1
+                    self.overall_gematria_values[word.cleaned_text] = word.gematria_value
         
-        # Calculate overall max gematria for magnitude normalization (with GEMATRIA_INFLUENCE enhancement)
-        max_gematria = max(self.overall_gematria_values.values()) * GEMATRIA_INFLUENCE if self.overall_gematria_values else GEMATRIA_INFLUENCE
+        # Second pass: recalculate all phrases with poem-wide frequencies
+        for phrase in self.phrases:
+            phrase.recalculate_with_poem_frequencies(poem_frequencies)
         
-        # Calculate overall magnitudes and word powers (corrected formula)
+        # Third pass: aggregate the recalculated data
+        self.overall_frequencies.clear()
+        self.overall_word_powers.clear()
+        
+        for phrase in self.phrases:
+            for word_text in phrase.frequencies:
+                # Use poem-wide frequencies (should now be consistent across all phrases)
+                self.overall_frequencies[word_text] = phrase.frequencies[word_text]
+                # Aggregate word powers from phrase-level calculations
+                self.overall_word_powers[word_text] += phrase.word_powers[word_text]
+        
+        # Calculate overall magnitudes using total frequencies and aggregated powers
         for word_text in self.overall_frequencies:
-            gematria = self.overall_gematria_values[word_text]
-            frequency = self.overall_frequencies[word_text]
-            # Apply GEMATRIA_INFLUENCE consistently (corrected formula)
-            enhanced_gematria = gematria * GEMATRIA_INFLUENCE
-            magnitude = enhanced_gematria / max_gematria if max_gematria else 0
-            word_power = magnitude * frequency
+            total_frequency = self.overall_frequencies[word_text]
+            total_power = self.overall_word_powers[word_text]
+            # Calculate magnitude as power/frequency (reverse of power = magnitude * frequency)
+            magnitude = total_power / total_frequency if total_frequency > 0 else 0
             self.overall_magnitudes[word_text] = magnitude
-            self.overall_word_powers[word_text] = word_power
         
         # Create the combined analysis dictionary with word powers
         self.WORD_FREQ_MAG_GEM = {
@@ -1216,7 +1235,6 @@ def main():
     
     try:
         poem, filename = EnhancedPoemGenerator.generate_interactive()
-        print(Colors.success(f"\nGeneration complete! Enhanced poem saved as: {filename}"))
         
     except KeyboardInterrupt:
         print(Colors.warning("\nPoem generation cancelled by user."))
